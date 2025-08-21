@@ -12,9 +12,25 @@
     </header>
     <main>
         <div class="container">
+            <div class="account-linking">
+                <h2>Link Your Bank Account</h2>
+                {% if not account_linked %}
+                    <p>Link your bank account to get started.</p>
+                    <form action="/link-account" method="post">
+                        <button type="submit">Link Bank Account</button>
+                    </form>
+                {% else %}
+                    <p><strong>Bank Account Linked!</strong></p>
+                {% endif %}
+            </div>
+
             <h2>Your BNPL Summary</h2>
             <div id="bnpl-summary">
-                <p>Total BNPL Spending: <strong>{{ bnpl_total }}</strong></p>
+                {% if account_linked %}
+                    <p>Total BNPL Spending: <strong>{{ bnpl_total }}</strong></p>
+                {% else %}
+                    <p>Please link a bank account to see your BNPL summary.</p>
+                {% endif %}
             </div>
         </div>
     </main>

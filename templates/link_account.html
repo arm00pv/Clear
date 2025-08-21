@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Bank Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Link Your Bank Account (Simulation)</h1>
+    </header>
+    <main>
+        <div class="container">
+            <h2>Select Your Bank</h2>
+            <p>This is a simulation of the Yodlee FastLink flow.</p>
+            <form action="/authorize-account" method="post">
+                <div class="form-group">
+                    <label for="bank">Choose a bank:</label>
+                    <select id="bank" name="bank">
+                        <option value="chase">Chase</option>
+                        <option value="wells_fargo">Wells Fargo</option>
+                        <option value="bank_of_america">Bank of America</option>
+                    </select>
+                </div>
+                <button type="submit">Authorize</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
