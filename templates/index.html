@@ -27,8 +27,17 @@
             <h2>Your BNPL Summary</h2>
             <div id="bnpl-summary">
                 {% if account_linked %}
-                    <div class="summary-card">
-                        <p>Total BNPL Spending: <strong>{{ bnpl_total }}</strong></p>
+                    <div class="summary-card-container">
+                        <div class="summary-card">
+                            <p>Total BNPL Spending</p>
+                            <strong>${{ bnpl_total }}</strong>
+                        </div>
+                        {% if analysis %}
+                        <div class="summary-card health-card">
+                            <p>Financial Health Score</p>
+                            <div class="health-score score-{{ (analysis.health_score / 20)|int * 20 }}">{{ analysis.health_score }}</div>
+                        </div>
+                        {% endif %}
                     </div>
 
                     {% if analysis %}
@@ -39,6 +48,22 @@
                                     <div class="insight-item">{{ insight }}</div>
                                 {% endfor %}
                             </div>
+
+                            {% if analysis.subscriptions %}
+                                <h3>📅 Detected Subscriptions</h3>
+                                <div class="subscription-list">
+                                    {% for sub in analysis.subscriptions %}
+                                        <div class="sub-item">
+                                            <div class="sub-icon">🎵</div> <!-- Generic icon for now -->
+                                            <div class="sub-details">
+                                                <span class="sub-name">{{ sub.name }}</span>
+                                                <span class="sub-date">Last paid: {{ sub.date }}</span>
+                                            </div>
+                                            <div class="sub-amount">${{ sub.amount }}</div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
 
                             <h3>📊 Category Breakdown</h3>
                             <div class="category-list">

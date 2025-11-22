@@ -89,6 +89,13 @@ class SmartAnalyzer:
                 "category": tx_category
             })
 
+        # Detect Subscriptions
+        subscriptions = self._detect_subscriptions(enriched_transactions)
+
+        # Calculate Health Score
+        total_spending = sum(category_breakdown.values())
+        health_score = self._calculate_health_score(total_bnpl, total_spending)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -97,8 +104,60 @@ class SmartAnalyzer:
             "category_breakdown": category_breakdown,
             "insights": insights,
             "bnpl_providers": bnpl_providers,
-            "recent_transactions": enriched_transactions
+            "recent_transactions": enriched_transactions,
+            "subscriptions": subscriptions,
+            "health_score": health_score
         }
+
+    def _detect_subscriptions(self, transactions):
+        """
+        Identifies potential recurring subscriptions.
+        """
+        subs = []
+        # In a real app, we'd look for recurring dates/amounts.
+        # Here we use known keywords.
+        keywords = ["NETFLIX", "SPOTIFY", "HULU", "DISNEY+", "APPLE", "AMAZON PRIME", "YOUTUBE"]
+
+        seen = set()
+        for tx in transactions:
+            desc = tx["description"].upper()
+            if any(k in desc for k in keywords):
+                # Avoid duplicates for this simple list
+                if desc not in seen:
+                    subs.append({
+                        "name": tx["description"],
+                        "amount": tx["amount"],
+                        "date": tx["date"] # Last payment date
+                    })
+                    seen.add(desc)
+        return subs
+
+    def _calculate_health_score(self, total_bnpl, total_spending):
+        """
+        Calculates a financial health score (0-100).
+        """
+        if total_spending == 0:
+            return 100
+
+        # Base score
+        score = 100
+
+        # Deduct based on BNPL ratio
+        bnpl_ratio = total_bnpl / total_spending
+        if bnpl_ratio > 0.5:
+            score -= 40
+        elif bnpl_ratio > 0.3:
+            score -= 20
+        elif bnpl_ratio > 0.1:
+            score -= 10
+
+        # Deduct absolute BNPL amount penalties
+        if total_bnpl > 200:
+            score -= 10
+        if total_bnpl > 500:
+            score -= 20
+
+        return max(0, score)
 
     def _generate_insights(self, breakdown, habits, total_bnpl):
         """

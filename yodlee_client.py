@@ -58,4 +58,9 @@ class YodleeClient:
                 "description": "KLARNA* ANOTHER THING",
                 "amount": 30.00,
             },
+            {
+                "date": datetime.date(2025, 7, 15),
+                "description": "NETFLIX.COM",
+                "amount": 15.99,
+            },
         ]
