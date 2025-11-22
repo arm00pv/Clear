@@ -32,3 +32,52 @@ main {
 #bnpl-summary strong {
     color: #e53935; /* A reddish color to highlight the spending */
 }
+
+.ai-section {
+    margin-top: 2rem;
+    text-align: left;
+    background: #f0f8ff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #cce4f7;
+}
+
+.ai-section h3 {
+    margin-top: 0;
+    color: #0056b3;
+}
+
+.insights-list {
+    margin-bottom: 1.5rem;
+}
+
+.insight-item {
+    background: #fff;
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-size: 1rem;
+}
+
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.category-item {
+    background: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    min-width: 150px;
+}
+
+.category-amount {
+    font-weight: bold;
+    margin-left: 10px;
+}

@@ -27,7 +27,33 @@
             <h2>Your BNPL Summary</h2>
             <div id="bnpl-summary">
                 {% if account_linked %}
-                    <p>Total BNPL Spending: <strong>{{ bnpl_total }}</strong></p>
+                    <div class="summary-card">
+                        <p>Total BNPL Spending: <strong>{{ bnpl_total }}</strong></p>
+                    </div>
+
+                    {% if analysis %}
+                        <div class="ai-section">
+                            <h3>🤖 AI Spending Insights</h3>
+                            <div class="insights-list">
+                                {% for insight in analysis.insights %}
+                                    <div class="insight-item">{{ insight }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <h3>📊 Category Breakdown</h3>
+                            <div class="category-list">
+                                {% for category, amount in analysis.category_breakdown.items() %}
+                                    {% if amount > 0 %}
+                                        <div class="category-item">
+                                            <span class="category-name">{{ category }}</span>
+                                            <span class="category-amount">${{ amount }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
                 {% else %}
                     <p>Please link a bank account to see your BNPL summary.</p>
                 {% endif %}

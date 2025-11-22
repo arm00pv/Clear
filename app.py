@@ -1,8 +1,11 @@
 import os
 from flask import Flask, render_template, redirect, url_for
+from flask_cors import CORS
 from yodlee_client import YodleeClient
+from ai_analyzer import SmartAnalyzer
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- Mock Yodlee Integration ---
 # In a real app, this would be stored in a session or database
@@ -11,23 +14,8 @@ ACCOUNT_LINKED = False
 YODLEE_API_KEY = "your_api_key"
 YODLEE_SECRET = "your_secret"
 yodlee_client = YodleeClient(YODLEE_API_KEY, YODLEE_SECRET)
+smart_analyzer = SmartAnalyzer()
 # ---
-
-# Define BNPL keywords
-BNPL_KEYWORDS = ["KLARNA", "AFTERPAY", "AFFIRM"]
-
-def calculate_bnpl_total_from_yodlee(user_id):
-    """
-    Fetches transactions from the Yodlee client and calculates the total BNPL spending.
-    """
-    total = 0.0
-    transactions = yodlee_client.get_transactions(user_id)
-    for transaction in transactions:
-        description = transaction.get("description", "").upper()
-        amount = transaction.get("amount", 0.0)
-        if any(keyword in description for keyword in BNPL_KEYWORDS):
-            total += amount
-    return f"{total:.2f}"
 
 @app.route('/')
 def index():
@@ -35,11 +23,15 @@ def index():
     Renders the main page with the total BNPL spending.
     """
     bnpl_total = "0.00"
+    analysis = {}
+
     if ACCOUNT_LINKED:
         # In a real app, the user_id would come from the session
-        bnpl_total = calculate_bnpl_total_from_yodlee(user_id="test_user")
+        transactions = yodlee_client.get_transactions(user_id="test_user")
+        analysis = smart_analyzer.analyze_transactions(transactions)
+        bnpl_total = analysis.get("total_bnpl", "0.00")
 
-    return render_template('index.html', bnpl_total=bnpl_total, account_linked=ACCOUNT_LINKED)
+    return render_template('index.html', bnpl_total=bnpl_total, account_linked=ACCOUNT_LINKED, analysis=analysis)
 
 @app.route('/link-account', methods=['POST'])
 def link_account():
