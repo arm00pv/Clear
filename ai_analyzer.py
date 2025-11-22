@@ -28,33 +28,42 @@ class SmartAnalyzer:
                 - total_bnpl (str): Total amount spent on BNPL services.
                 - category_breakdown (dict): Total spending per category.
                 - insights (list): A list of AI-generated insights/tips.
+                - bnpl_providers (dict): Breakdown of spending by BNPL provider.
+                - recent_transactions (list): The list of transactions, potentially enriched.
         """
         total_bnpl = 0.0
         category_breakdown = {cat: 0.0 for cat in self.CATEGORIES}
         category_breakdown["Uncategorized"] = 0.0
+        bnpl_providers = {}
 
         spending_habits = []
+        enriched_transactions = []
 
         for transaction in transactions:
             description = transaction.get("description", "").upper()
             amount = transaction.get("amount", 0.0)
 
             categorized = False
+            tx_category = "Uncategorized"
 
             # Check for BNPL specifically first
-            if any(keyword in description for keyword in self.CATEGORIES["BNPL"]):
-                total_bnpl += amount
-                # BNPL is also a category
-                category_breakdown["BNPL"] += amount
-                categorized = True
+            bnpl_match = False
+            for keyword in self.CATEGORIES["BNPL"]:
+                if keyword in description:
+                    total_bnpl += amount
+                    category_breakdown["BNPL"] += amount
+                    categorized = True
+                    bnpl_match = True
+                    tx_category = "BNPL"
+
+                    # Track provider
+                    provider_name = keyword.title()
+                    if provider_name not in bnpl_providers:
+                        bnpl_providers[provider_name] = 0.0
+                    bnpl_providers[provider_name] += amount
+                    break
 
             # Check other categories
-            # Note: A transaction can be BNPL and Shopping, but for this simple chart we might want exclusive or multi-tag.
-            # Let's assume if it's not BNPL, we check others. If it is BNPL, we might double count or just leave it as BNPL.
-            # Let's try to find the underlying category for BNPL transactions if possible,
-            # but given the description "KLARNA* WIDGET CO", it's hard without more logic.
-            # For now, let's just categorize based on keywords.
-
             found_category = False
             for category, keywords in self.CATEGORIES.items():
                 if category == "BNPL": continue # Already handled
@@ -62,6 +71,9 @@ class SmartAnalyzer:
                 if any(keyword in description for keyword in keywords):
                     category_breakdown[category] += amount
                     found_category = True
+                    if not bnpl_match:
+                        tx_category = category
+
                     # Track specific habits
                     if category == "Food & Drink" and amount < 20:
                         spending_habits.append("Coffee/Snack")
@@ -69,13 +81,23 @@ class SmartAnalyzer:
             if not found_category and not categorized:
                 category_breakdown["Uncategorized"] += amount
 
+            # Enriched transaction object
+            enriched_transactions.append({
+                "date": transaction.get("date"),
+                "description": transaction.get("description"),
+                "amount": f"{amount:.2f}",
+                "category": tx_category
+            })
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
         return {
             "total_bnpl": f"{total_bnpl:.2f}",
             "category_breakdown": category_breakdown,
-            "insights": insights
+            "insights": insights,
+            "bnpl_providers": bnpl_providers,
+            "recent_transactions": enriched_transactions
         }
 
     def _generate_insights(self, breakdown, habits, total_bnpl):

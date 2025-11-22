@@ -47,10 +47,48 @@
                                         <div class="category-item">
                                             <span class="category-name">{{ category }}</span>
                                             <span class="category-amount">${{ amount }}</span>
+                                            <div class="category-bar" style="width: {{ amount }}px; max-width: 100%;"></div>
                                         </div>
                                     {% endif %}
                                 {% endfor %}
                             </div>
+
+                            {% if analysis.bnpl_providers %}
+                                <h3>💳 BNPL Provider Breakdown</h3>
+                                <div class="bnpl-list">
+                                    {% for provider, amount in analysis.bnpl_providers.items() %}
+                                        <div class="bnpl-item">
+                                            <span>{{ provider }}</span>
+                                            <strong>${{ amount }}</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if analysis.recent_transactions %}
+                                <h3>📜 Recent Transactions</h3>
+                                <table class="transaction-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for tx in analysis.recent_transactions %}
+                                            <tr>
+                                                <td>{{ tx.date }}</td>
+                                                <td>{{ tx.description }}</td>
+                                                <td><span class="badge {{ tx.category|lower|replace(' & ', '-') }}">{{ tx.category }}</span></td>
+                                                <td>${{ tx.amount }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% endif %}
+
                         </div>
                     {% endif %}
 
