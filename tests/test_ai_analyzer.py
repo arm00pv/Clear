@@ -175,3 +175,33 @@ def test_savings_potential():
 
     # Total savings: 0.50 + 0.90 = 1.40
     assert analysis["savings_potential"] == "1.40"
+
+def test_achievements():
+    """
+    Tests achievement generation.
+    """
+    analyzer = SmartAnalyzer()
+
+    # Case 1: Debt Free (No BNPL)
+    tx = [
+        {"amount": 50.00, "category": "Shopping", "description": "T1"},
+    ]
+    analysis = analyzer.analyze_transactions(tx)
+    achievements = analysis["achievements"]
+
+    titles = [a["title"] for a in achievements]
+    assert "Debt Free" in titles
+
+    # Case 2: Good Health (Score > 80)
+    # 50 spend, 0 BNPL -> Score 100.
+    assert "Financial Guru" in titles
+
+    # Case 3: BNPL user but balanced (<100)
+    tx_bnpl = [
+        {"amount": 50.00, "category": "BNPL", "description": "KLARNA"},
+    ]
+    analysis_bnpl = analyzer.analyze_transactions(tx_bnpl)
+    titles_bnpl = [a["title"] for a in analysis_bnpl["achievements"]]
+
+    assert "Debt Free" not in titles_bnpl
+    assert "Balanced Spender" in titles_bnpl

@@ -111,6 +111,9 @@ class SmartAnalyzer:
         # Analyze Budget (Comparison)
         budget_analysis = self._analyze_budget(category_breakdown)
 
+        # Generate Achievements
+        achievements = self._generate_achievements(health_score, total_bnpl, budget_analysis)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -126,8 +129,55 @@ class SmartAnalyzer:
             "upcoming_installments": upcoming_installments,
             "anomalies": anomalies,
             "savings_potential": f"{savings_potential:.2f}",
-            "budget_analysis": budget_analysis
+            "budget_analysis": budget_analysis,
+            "achievements": achievements
         }
+
+    def _generate_achievements(self, health_score, total_bnpl, budget_analysis):
+        """
+        Generates gamified achievements based on financial health.
+        """
+        achievements = []
+
+        # Health Score Achievements
+        if health_score >= 80:
+            achievements.append({
+                "icon": "🏆",
+                "title": "Financial Guru",
+                "description": "Achieved a Health Score of 80+"
+            })
+        elif health_score >= 60:
+             achievements.append({
+                "icon": "⭐",
+                "title": "On the Right Track",
+                "description": "Achieved a Health Score of 60+"
+            })
+
+        # BNPL Achievements
+        if total_bnpl == 0:
+            achievements.append({
+                "icon": "🛡️",
+                "title": "Debt Free",
+                "description": "No BNPL usage detected!"
+            })
+        elif total_bnpl < 100:
+             achievements.append({
+                "icon": "⚖️",
+                "title": "Balanced Spender",
+                "description": "Kept BNPL spending under $100"
+            })
+
+        # Budget Achievements
+        # Check if all budgets are 'good'
+        all_good = all(item["status"] == "good" for item in budget_analysis)
+        if all_good:
+             achievements.append({
+                "icon": "🎯",
+                "title": "Budget Master",
+                "description": "Stayed within budget for all categories"
+            })
+
+        return achievements
 
     def _detect_anomalies(self, transactions, total_spending):
         """
