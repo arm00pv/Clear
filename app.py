@@ -1,5 +1,7 @@
 import os
-from flask import Flask, render_template, redirect, url_for
+import csv
+import io
+from flask import Flask, render_template, redirect, url_for, Response
 from flask_cors import CORS
 from yodlee_client import YodleeClient
 from ai_analyzer import SmartAnalyzer
@@ -48,6 +50,33 @@ def authorize_account():
     global ACCOUNT_LINKED
     ACCOUNT_LINKED = True
     return redirect(url_for('index'))
+
+@app.route('/download-report')
+def download_report():
+    """
+    Generates and downloads a CSV report of the transactions.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    transactions = yodlee_client.get_transactions(user_id="test_user")
+
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(["Date", "Description", "Amount"])
+
+    # Rows
+    for tx in transactions:
+        writer.writerow([tx.get("date"), tx.get("description"), tx.get("amount")])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=transactions_report.csv"}
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

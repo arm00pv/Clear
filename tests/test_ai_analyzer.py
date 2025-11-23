@@ -116,3 +116,28 @@ def test_spending_projection():
     # Verify calculation
     # (100+100+100) / 3 = 100 daily. 100 * 30 = 3000.
     assert analysis["projected_spending"] == "3000.00"
+
+def test_upcoming_installments():
+    """
+    Tests the upcoming installment generation.
+    """
+    analyzer = SmartAnalyzer()
+
+    mock_transactions = [
+        {"description": "KLARNA* PRODUCT", "amount": 40.00, "date": datetime.date(2023, 1, 1)},
+    ]
+
+    analysis = analyzer.analyze_transactions(mock_transactions)
+    installments = analysis["upcoming_installments"]
+
+    # Expect 3 installments
+    assert len(installments) == 3
+
+    # Check amounts and descriptions
+    assert installments[0]["amount"] == "40.00"
+    assert "Installment 2 of 4" in installments[0]["description"]
+
+    # Check dates (2 weeks apart)
+    # Start: Jan 1. First installment: Jan 15.
+    assert installments[0]["due_date"] == "2023-01-15"
+    assert installments[1]["due_date"] == "2023-01-29"

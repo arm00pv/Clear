@@ -99,6 +99,9 @@ class SmartAnalyzer:
         # Project Monthly Spending
         projected_spending = self._calculate_spending_projection(transactions, total_spending)
 
+        # Generate Upcoming Installments (Mock)
+        upcoming_installments = self._generate_upcoming_installments(enriched_transactions)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -110,8 +113,46 @@ class SmartAnalyzer:
             "recent_transactions": enriched_transactions,
             "subscriptions": subscriptions,
             "health_score": health_score,
-            "projected_spending": f"{projected_spending:.2f}"
+            "projected_spending": f"{projected_spending:.2f}",
+            "upcoming_installments": upcoming_installments
         }
+
+    def _generate_upcoming_installments(self, transactions):
+        """
+        Generates mock upcoming installments for BNPL transactions.
+        Assumes a standard 'Pay in 4' model where 3 future payments remain.
+        """
+        installments = []
+        import datetime
+
+        for tx in transactions:
+            if tx["category"] == "BNPL":
+                # Create 3 future dates
+                try:
+                    current_date = tx["date"]
+                    if current_date is None:
+                        # Fallback for tests or missing dates: use today
+                        current_date = datetime.date.today()
+
+                    if isinstance(current_date, str):
+                        current_date = datetime.date.fromisoformat(current_date)
+
+                    amount = float(tx["amount"])
+
+                    # Generate 3 payments
+                    for i in range(1, 4):
+                        due_date = current_date + datetime.timedelta(weeks=2*i)
+                        installments.append({
+                            "description": f"Installment {i+1} of 4: {tx['description']}",
+                            "amount": f"{amount:.2f}",
+                            "due_date": due_date.isoformat()
+                        })
+                except ValueError:
+                    continue
+
+        # Sort by date
+        installments.sort(key=lambda x: x["due_date"])
+        return installments
 
     def _calculate_spending_projection(self, transactions, total_spending):
         """

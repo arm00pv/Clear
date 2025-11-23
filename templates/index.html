@@ -8,7 +8,12 @@
 </head>
 <body>
     <header>
-        <h1>BNPL Spending Tracker</h1>
+        <div class="header-content">
+            <h1>BNPL Spending Tracker</h1>
+            {% if account_linked %}
+                <a href="/download-report" class="btn-download">Download Report ⬇️</a>
+            {% endif %}
+        </div>
     </header>
     <main>
         <div class="container">
@@ -66,6 +71,23 @@
                                                 <span class="sub-date">Last paid: {{ sub.date }}</span>
                                             </div>
                                             <div class="sub-amount">${{ sub.amount }}</div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if analysis.upcoming_installments %}
+                                <h3>⏳ Upcoming BNPL Installments (Est.)</h3>
+                                <div class="installment-timeline">
+                                    {% for inst in analysis.upcoming_installments %}
+                                        <div class="timeline-item">
+                                            <div class="timeline-date">
+                                                <span>{{ inst.due_date }}</span>
+                                            </div>
+                                            <div class="timeline-content">
+                                                <h4>{{ inst.description }}</h4>
+                                                <span class="amount">${{ inst.amount }}</span>
+                                            </div>
                                         </div>
                                     {% endfor %}
                                 </div>
