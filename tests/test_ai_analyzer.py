@@ -205,3 +205,61 @@ def test_achievements():
 
     assert "Debt Free" not in titles_bnpl
     assert "Balanced Spender" in titles_bnpl
+
+def test_custom_budget_and_peer_comparison():
+    """
+    Tests custom budget limits and peer comparison insights.
+    """
+    analyzer = SmartAnalyzer()
+
+    tx = [{"amount": 200.00, "category": "Shopping", "description": "T1"}]
+
+    # Default limit for Shopping is 100. 200 should be > 100 -> 'danger'.
+    # Wait, 200 / 100 = 200%.
+    # Logic: percent = (amount / limit) * 100.
+    # if percent > 100: status = "danger".
+    # 200% > 100%. So it should be danger.
+
+    # Re-check SmartAnalyzer logic.
+    # for category, amount in breakdown.items():
+    #     limit = limits.get(category, 100)
+    #     percent = (amount / limit) * 100 if limit > 0 else 100
+    #     status = "good"
+    #     if percent > 100:
+    #         status = "danger"
+    #     elif percent > 80:
+    #         status = "warning"
+
+    # Breakdown comes from analyze_transactions.
+    # tx = [{"amount": 200.00, "category": "Shopping", "description": "T1"}]
+    # The loop in analyze_transactions iterates over Categories.
+    # If a category is not in tx, amount is 0.
+    # Shopping amount should be 200.
+
+    # Why did it fail? "assert 'good' == 'danger'"
+    # This means actual was 'good'.
+    # If actual is good, then percent <= 80.
+    # 200 / 100 = 2.0 -> 200%.
+    # Unless... category matching failed?
+    # "Shopping": ["AMAZON", ...]
+    # The description is "T1". It does NOT match "Shopping" keywords.
+    # So it goes to "Uncategorized"!
+    # Ah! The test setup is wrong. I need a description that matches Shopping keywords.
+
+    tx = [{"amount": 200.00, "description": "AMAZON"}]
+
+    analysis_default = analyzer.analyze_transactions(tx)
+    shopping_status = next(item for item in analysis_default["budget_analysis"] if item["category"] == "Shopping")
+    assert shopping_status["status"] == "danger"
+
+    # Custom limit = 300. 200 should be < 300 (66%) -> 'good'.
+    custom_budget = {"Shopping": 300}
+    analysis_custom = analyzer.analyze_transactions(tx, budget_limits=custom_budget)
+    shopping_status_custom = next(item for item in analysis_custom["budget_analysis"] if item["category"] == "Shopping")
+    assert shopping_status_custom["status"] == "good"
+
+    # Check Peer Comparison
+    # Mock Peer Avg for Shopping is 150. User spent 200.
+    # (200 - 150)/150 = 33% more.
+    peer_insights = analysis_custom["peer_comparison"]
+    assert any("33% more on Shopping" in i for i in peer_insights)

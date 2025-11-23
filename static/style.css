@@ -178,6 +178,58 @@ main {
     color: #888;
 }
 
+.budget-settings {
+    margin-top: 1rem;
+    background: var(--accent-color);
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.budget-settings summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.budget-form {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.budget-form .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.budget-form label {
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+}
+
+.budget-form input {
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+.budget-form button {
+    grid-column: 1 / -1;
+    background: #2196f3;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
 .progress-bg {
     background: #e0e0e0;
     border-radius: 10px;
@@ -398,6 +450,23 @@ body.dark-mode .ai-section h3 {
 .category-amount {
     font-weight: bold;
     z-index: 1;
+}
+
+/* Peer Comparison */
+.peer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 2rem;
+}
+
+.peer-item {
+    background: var(--card-bg);
+    border-left: 4px solid #9c27b0;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.95rem;
 }
 
 /* BNPL List */

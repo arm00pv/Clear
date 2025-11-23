@@ -16,12 +16,13 @@ class SmartAnalyzer:
         "Utilities": ["ELECTRIC", "WATER", "GAS", "INTERNET", "PHONE"],
     }
 
-    def analyze_transactions(self, transactions):
+    def analyze_transactions(self, transactions, budget_limits=None):
         """
         Analyzes a list of transactions to produce a comprehensive financial report.
 
         Args:
             transactions (list): A list of transaction dictionaries.
+            budget_limits (dict, optional): Custom budget limits per category.
 
         Returns:
             dict: A dictionary containing:
@@ -109,7 +110,10 @@ class SmartAnalyzer:
         savings_potential = self._calculate_savings_potential(enriched_transactions)
 
         # Analyze Budget (Comparison)
-        budget_analysis = self._analyze_budget(category_breakdown)
+        budget_analysis = self._analyze_budget(category_breakdown, budget_limits)
+
+        # Generate Peer Comparison
+        peer_comparison = self._generate_peer_comparison(category_breakdown)
 
         # Generate Achievements
         achievements = self._generate_achievements(health_score, total_bnpl, budget_analysis)
@@ -130,7 +134,8 @@ class SmartAnalyzer:
             "anomalies": anomalies,
             "savings_potential": f"{savings_potential:.2f}",
             "budget_analysis": budget_analysis,
-            "achievements": achievements
+            "achievements": achievements,
+            "peer_comparison": peer_comparison
         }
 
     def _generate_achievements(self, health_score, total_bnpl, budget_analysis):
@@ -215,25 +220,28 @@ class SmartAnalyzer:
                 continue
         return savings
 
-    def _analyze_budget(self, breakdown):
+    def _analyze_budget(self, breakdown, custom_limits=None):
         """
-        Compares actual spending against a mock 'AI Recommended' budget.
+        Compares actual spending against a budget.
         """
-        # Mock Recommended Budget (percentages converted to approximate amounts for this scale)
-        # Assuming total budget is around 500 for the demo scale.
-        recommended = {
+        # Default Budget
+        limits = {
             "Food & Drink": 150,
             "Transportation": 100,
             "Shopping": 100,
             "Entertainment": 50,
             "Utilities": 100,
-            "BNPL": 50, # Should keep low
+            "BNPL": 50,
             "Uncategorized": 50
         }
 
+        # Override with custom limits if provided
+        if custom_limits:
+            limits.update(custom_limits)
+
         analysis = []
         for category, amount in breakdown.items():
-            limit = recommended.get(category, 100)
+            limit = limits.get(category, 100)
             percent = (amount / limit) * 100 if limit > 0 else 100
             status = "good"
             if percent > 100:
@@ -249,6 +257,32 @@ class SmartAnalyzer:
                 "status": status
             })
         return analysis
+
+    def _generate_peer_comparison(self, breakdown):
+        """
+        Generates insights comparing user spending to 'Peer' data.
+        """
+        # Mock Peer Data (Average spending per category)
+        peer_averages = {
+            "Food & Drink": 200,
+            "Shopping": 150,
+            "Transportation": 120,
+            "Entertainment": 60,
+            "BNPL": 80
+        }
+
+        comparison = []
+        for cat, avg in peer_averages.items():
+            user_spend = breakdown.get(cat, 0)
+            # Fix division by zero if avg is 0 (though unlikely with mock data)
+            if user_spend > 0 and avg > 0:
+                diff_percent = ((user_spend - avg) / avg) * 100
+                if diff_percent > 20:
+                    comparison.append(f"You spend {int(diff_percent)}% more on {cat} than average.")
+                elif diff_percent < -20:
+                    comparison.append(f"You spend {abs(int(diff_percent))}% less on {cat} than average. Great job!")
+
+        return comparison
 
     def _generate_upcoming_installments(self, transactions):
         """
