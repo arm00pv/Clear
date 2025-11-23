@@ -48,17 +48,53 @@
                             <strong>${{ analysis.projected_spending }}</strong>
                             <span class="projection-note">Based on daily average</span>
                         </div>
+
+                        <div class="summary-card savings-card">
+                            <p>Savings Potential (Round-ups)</p>
+                            <strong>${{ analysis.savings_potential }}</strong>
+                            <span class="projection-note">If you rounded up spare change</span>
+                        </div>
                         {% endif %}
                     </div>
 
                     {% if analysis %}
                         <div class="ai-section">
+                            {% if analysis.anomalies %}
+                                <div class="anomaly-alert">
+                                    <h3>⚠️ Unusual Spending Detected</h3>
+                                    <p>The following transactions are higher than usual:</p>
+                                    <ul>
+                                        {% for tx in analysis.anomalies %}
+                                            <li><strong>{{ tx.description }}</strong>: ${{ tx.amount }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
                             <h3>🤖 AI Spending Insights</h3>
                             <div class="insights-list">
                                 {% for insight in analysis.insights %}
                                     <div class="insight-item">{{ insight }}</div>
                                 {% endfor %}
                             </div>
+
+                            {% if analysis.budget_analysis %}
+                                <h3>📉 Budget Watch</h3>
+                                <div class="budget-list">
+                                    {% for item in analysis.budget_analysis %}
+                                        {% if item.amount > 0 %}
+                                        <div class="budget-item">
+                                            <div class="budget-info">
+                                                <span>{{ item.category }}</span>
+                                                <span class="budget-amounts">${{ item.amount }} / ${{ item.limit }}</span>
+                                            </div>
+                                            <div class="progress-bg">
+                                                <div class="progress-fill {{ item.status }}" style="width: {{ item.percent }}%"></div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
 
                             {% if analysis.subscriptions %}
                                 <h3>📅 Detected Subscriptions</h3>

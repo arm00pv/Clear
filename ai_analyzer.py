@@ -102,6 +102,15 @@ class SmartAnalyzer:
         # Generate Upcoming Installments (Mock)
         upcoming_installments = self._generate_upcoming_installments(enriched_transactions)
 
+        # Detect Anomalies
+        anomalies = self._detect_anomalies(enriched_transactions, total_spending)
+
+        # Calculate Savings Potential (Round-ups)
+        savings_potential = self._calculate_savings_potential(enriched_transactions)
+
+        # Analyze Budget (Comparison)
+        budget_analysis = self._analyze_budget(category_breakdown)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -114,8 +123,82 @@ class SmartAnalyzer:
             "subscriptions": subscriptions,
             "health_score": health_score,
             "projected_spending": f"{projected_spending:.2f}",
-            "upcoming_installments": upcoming_installments
+            "upcoming_installments": upcoming_installments,
+            "anomalies": anomalies,
+            "savings_potential": f"{savings_potential:.2f}",
+            "budget_analysis": budget_analysis
         }
+
+    def _detect_anomalies(self, transactions, total_spending):
+        """
+        Detects unusually high transactions (e.g. > 20% of total spending or > $150).
+        """
+        anomalies = []
+        if not transactions:
+            return anomalies
+
+        threshold = max(150, total_spending * 0.2)
+
+        for tx in transactions:
+            try:
+                amount = float(tx["amount"])
+                if amount > threshold:
+                    anomalies.append(tx)
+            except ValueError:
+                continue
+        return anomalies
+
+    def _calculate_savings_potential(self, transactions):
+        """
+        Calculates potential savings if rounding up each transaction to the nearest dollar.
+        """
+        import math
+        savings = 0.0
+        for tx in transactions:
+            try:
+                amount = float(tx["amount"])
+                ceiling = math.ceil(amount)
+                diff = ceiling - amount
+                if diff > 0:
+                    savings += diff
+            except ValueError:
+                continue
+        return savings
+
+    def _analyze_budget(self, breakdown):
+        """
+        Compares actual spending against a mock 'AI Recommended' budget.
+        """
+        # Mock Recommended Budget (percentages converted to approximate amounts for this scale)
+        # Assuming total budget is around 500 for the demo scale.
+        recommended = {
+            "Food & Drink": 150,
+            "Transportation": 100,
+            "Shopping": 100,
+            "Entertainment": 50,
+            "Utilities": 100,
+            "BNPL": 50, # Should keep low
+            "Uncategorized": 50
+        }
+
+        analysis = []
+        for category, amount in breakdown.items():
+            limit = recommended.get(category, 100)
+            percent = (amount / limit) * 100 if limit > 0 else 100
+            status = "good"
+            if percent > 100:
+                status = "danger"
+            elif percent > 80:
+                status = "warning"
+
+            analysis.append({
+                "category": category,
+                "amount": amount,
+                "limit": limit,
+                "percent": min(percent, 100), # Cap for bar width
+                "status": status
+            })
+        return analysis
 
     def _generate_upcoming_installments(self, transactions):
         """

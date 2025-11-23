@@ -141,3 +141,37 @@ def test_upcoming_installments():
     # Start: Jan 1. First installment: Jan 15.
     assert installments[0]["due_date"] == "2023-01-15"
     assert installments[1]["due_date"] == "2023-01-29"
+
+def test_anomaly_detection():
+    """
+    Tests detection of unusually high transactions.
+    """
+    analyzer = SmartAnalyzer()
+
+    # Threshold is max(150, total*0.2).
+    # Case 1: Total 200. Threshold = max(150, 40) = 150.
+    tx = [
+        {"description": "Small", "amount": 10.00},
+        {"description": "Big", "amount": 190.00},
+    ]
+    analysis = analyzer.analyze_transactions(tx)
+    anomalies = analysis["anomalies"]
+
+    assert len(anomalies) == 1
+    assert anomalies[0]["description"] == "Big"
+
+def test_savings_potential():
+    """
+    Tests round-up savings calculation.
+    """
+    analyzer = SmartAnalyzer()
+
+    tx = [
+        {"amount": 10.50, "description": "T1"}, # Round to 11.00 -> 0.50
+        {"amount": 5.10, "description": "T2"},  # Round to 6.00 -> 0.90
+        {"amount": 20.00, "description": "T3"}, # Round to 20.00 -> 0.00
+    ]
+    analysis = analyzer.analyze_transactions(tx)
+
+    # Total savings: 0.50 + 0.90 = 1.40
+    assert analysis["savings_potential"] == "1.40"
