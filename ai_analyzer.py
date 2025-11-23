@@ -96,6 +96,9 @@ class SmartAnalyzer:
         total_spending = sum(category_breakdown.values())
         health_score = self._calculate_health_score(total_bnpl, total_spending)
 
+        # Project Monthly Spending
+        projected_spending = self._calculate_spending_projection(transactions, total_spending)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -106,8 +109,49 @@ class SmartAnalyzer:
             "bnpl_providers": bnpl_providers,
             "recent_transactions": enriched_transactions,
             "subscriptions": subscriptions,
-            "health_score": health_score
+            "health_score": health_score,
+            "projected_spending": f"{projected_spending:.2f}"
         }
+
+    def _calculate_spending_projection(self, transactions, total_spending):
+        """
+        Calculates a projection for total monthly spending based on current average daily spending.
+        """
+        if not transactions:
+            return 0.0
+
+        # Ensure dates are comparable (handle strings if necessary, though yodlee_client uses date objects)
+        # The mocked test might pass strings, so let's handle that or rely on the input being correct.
+        # In test_subscription_detection, the dates are strings "2023-01-01".
+        # In yodlee_client, they are datetime.date objects.
+        # We should convert to date objects if they are strings.
+        import datetime
+
+        dates = []
+        for t in transactions:
+            d = t.get("date")
+            if isinstance(d, str):
+                try:
+                    d = datetime.date.fromisoformat(d)
+                except ValueError:
+                    continue # Skip invalid dates
+            if d:
+                dates.append(d)
+
+        if not dates:
+            return total_spending # Fallback
+
+        min_date = min(dates)
+        max_date = max(dates)
+        days_diff = (max_date - min_date).days + 1
+
+        if days_diff <= 0:
+            days_diff = 1
+
+        daily_average = total_spending / days_diff
+
+        # Simple projection: 30 * average daily spend
+        return daily_average * 30
 
     def _detect_subscriptions(self, transactions):
         """

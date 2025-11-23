@@ -1,4 +1,5 @@
 import pytest
+import datetime
 from ai_analyzer import SmartAnalyzer
 
 def test_smart_analyzer_bnpl_calculation():
@@ -93,3 +94,25 @@ def test_health_score():
     ]
     analysis_worst = analyzer.analyze_transactions(tx_worst)
     assert analysis_worst["health_score"] < 50
+
+def test_spending_projection():
+    """
+    Tests the monthly spending projection.
+    """
+    analyzer = SmartAnalyzer()
+
+    # Case: 3 days, total 300. Daily avg 100. Monthly = 3000.
+    mock_transactions = [
+        {"description": "T1", "amount": 100.00, "date": datetime.date(2023, 1, 1)},
+        {"description": "T2", "amount": 100.00, "date": datetime.date(2023, 1, 2)},
+        {"description": "T3", "amount": 100.00, "date": datetime.date(2023, 1, 3)},
+    ]
+
+    analysis = analyzer.analyze_transactions(mock_transactions)
+    # Need to import datetime
+    # The function converts date objects if needed or expects them.
+    # SmartAnalyzer uses dates from the list.
+
+    # Verify calculation
+    # (100+100+100) / 3 = 100 daily. 100 * 30 = 3000.
+    assert analysis["projected_spending"] == "3000.00"
