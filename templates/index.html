@@ -57,6 +57,12 @@
                             <strong>${{ analysis.savings_potential }}</strong>
                             <span class="projection-note">If you rounded up spare change</span>
                         </div>
+
+                        <div class="summary-card payoff-card">
+                            <p>Debt Free In</p>
+                            <strong>{{ analysis.payoff_plan.months }} Months</strong>
+                            <span class="projection-note">{{ analysis.payoff_plan.recommendation }}</span>
+                        </div>
                         {% endif %}
                     </div>
 
@@ -154,18 +160,14 @@
                                 </div>
                             {% endif %}
 
-                            {% if analysis.upcoming_installments %}
-                                <h3>⏳ Upcoming BNPL Installments (Est.)</h3>
-                                <div class="installment-timeline">
-                                    {% for inst in analysis.upcoming_installments %}
-                                        <div class="timeline-item">
-                                            <div class="timeline-date">
-                                                <span>{{ inst.due_date }}</span>
-                                            </div>
-                                            <div class="timeline-content">
-                                                <h4>{{ inst.description }}</h4>
-                                                <span class="amount">${{ inst.amount }}</span>
-                                            </div>
+                            {% if analysis.calendar_events %}
+                                <h3>📅 Financial Calendar (Upcoming)</h3>
+                                <div class="calendar-grid">
+                                    {% for event in analysis.calendar_events %}
+                                        <div class="calendar-day {{ event.type }}">
+                                            <div class="cal-date">{{ event.date }}</div>
+                                            <div class="cal-title">{{ event.title }}</div>
+                                            <div class="cal-amount">${{ event.amount }}</div>
                                         </div>
                                     {% endfor %}
                                 </div>

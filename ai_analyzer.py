@@ -31,6 +31,8 @@ class SmartAnalyzer:
                 - insights (list): A list of AI-generated insights/tips.
                 - bnpl_providers (dict): Breakdown of spending by BNPL provider.
                 - recent_transactions (list): The list of transactions, potentially enriched.
+                - payoff_plan (dict): Debt payoff calculations and recommendations.
+                - calendar_events (list): Merged list of upcoming installments and payments.
         """
         total_bnpl = 0.0
         category_breakdown = {cat: 0.0 for cat in self.CATEGORIES}
@@ -112,6 +114,15 @@ class SmartAnalyzer:
         # Analyze Budget (Comparison)
         budget_analysis = self._analyze_budget(category_breakdown, budget_limits)
 
+        # Generate Payoff Plan
+        bnpl_limit = 50 # Default
+        if budget_limits and "BNPL" in budget_limits:
+            bnpl_limit = budget_limits["BNPL"]
+        payoff_plan = self._generate_payoff_plan(total_bnpl, bnpl_limit)
+
+        # Generate Calendar Events
+        calendar_events = self._get_calendar_events(upcoming_installments, subscriptions)
+
         # Generate Peer Comparison
         peer_comparison = self._generate_peer_comparison(category_breakdown)
 
@@ -135,8 +146,87 @@ class SmartAnalyzer:
             "savings_potential": f"{savings_potential:.2f}",
             "budget_analysis": budget_analysis,
             "achievements": achievements,
-            "peer_comparison": peer_comparison
+            "peer_comparison": peer_comparison,
+            "payoff_plan": payoff_plan,
+            "calendar_events": calendar_events
         }
+
+    def _generate_payoff_plan(self, total_debt, monthly_budget):
+        """
+        Calculates a simple debt payoff plan.
+        """
+        if total_debt <= 0:
+            return {"months": 0, "recommendation": "You are debt free!"}
+
+        if monthly_budget <= 0:
+            return {"months": "∞", "recommendation": "Please allocate a budget for BNPL payments to clear debt."}
+
+        import math
+        # Ensure total_debt and monthly_budget are floats
+        total_debt = float(total_debt)
+        monthly_budget = float(monthly_budget)
+
+        months = math.ceil(total_debt / monthly_budget)
+
+        return {
+            "months": months,
+            "recommendation": f"Paying ${monthly_budget:.2f}/month will clear your debt in {months} months."
+        }
+
+    def _get_calendar_events(self, installments, subscriptions):
+        """
+        Merges and sorts upcoming financial events.
+        """
+        events = []
+
+        # Add Installments
+        for inst in installments:
+            events.append({
+                "date": inst["due_date"],
+                "title": inst["description"].split(":")[0], # Short title
+                "amount": inst["amount"],
+                "type": "installment"
+            })
+
+        # Add Subscriptions (Future projections - simplify to 'next month same day')
+        # Note: Subscriptions currently have 'last paid date'. We project next date.
+        import datetime
+        today = datetime.date.today()
+
+        for sub in subscriptions:
+            # Project next payment
+            # Simplified: just assume it's monthly and due day matches
+            try:
+                last_date_str = sub["date"]
+                if isinstance(last_date_str, str):
+                    last_date = datetime.date.fromisoformat(last_date_str)
+                else:
+                    last_date = last_date_str
+
+                # If last date is in past, project to next occurence relative to today
+                # For this mock, let's just say it's due on the same day next month
+                # Handle edge case of day > 28
+                day = min(last_date.day, 28)
+                next_date = today.replace(day=day)
+                if next_date < today:
+                    # Move to next month
+                    if next_date.month == 12:
+                        next_date = next_date.replace(year=next_date.year+1, month=1)
+                    else:
+                        next_date = next_date.replace(month=next_date.month+1)
+
+                events.append({
+                    "date": next_date.isoformat(),
+                    "title": sub["name"],
+                    "amount": sub["amount"],
+                    "type": "subscription"
+                })
+            except Exception:
+                continue
+
+        # Sort by date
+        events.sort(key=lambda x: x["date"])
+        return events
 
     def _generate_achievements(self, health_score, total_bnpl, budget_analysis):
         """
