@@ -129,6 +129,9 @@ class SmartAnalyzer:
         # Generate Achievements
         achievements = self._generate_achievements(health_score, total_bnpl, budget_analysis)
 
+        # Estimate Carbon Footprint
+        carbon_footprint = self._estimate_carbon_footprint(category_breakdown)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -148,8 +151,61 @@ class SmartAnalyzer:
             "achievements": achievements,
             "peer_comparison": peer_comparison,
             "payoff_plan": payoff_plan,
-            "calendar_events": calendar_events
+            "calendar_events": calendar_events,
+            "carbon_footprint": f"{carbon_footprint:.1f}"
         }
+
+    def _estimate_carbon_footprint(self, breakdown):
+        """
+        Estimates carbon footprint (kg CO2) based on spending categories.
+        Factors are illustrative estimates (kg CO2 per dollar).
+        """
+        factors = {
+            "Transportation": 0.8, # Gas/Flights are high
+            "Utilities": 0.5, # Energy
+            "Food & Drink": 0.3, # Meat/processing
+            "Shopping": 0.2, # Manufacturing
+            "BNPL": 0.2, # Assumed shopping
+            "Entertainment": 0.05 # Digital services
+        }
+
+        total_co2 = 0.0
+        for cat, amount in breakdown.items():
+            factor = factors.get(cat, 0.1) # Default low factor
+            total_co2 += amount * factor
+
+        return total_co2
+
+    def get_chat_response(self, query, analysis_data):
+        """
+        Generates a response to a user question based on the analysis data.
+        """
+        q = query.lower()
+
+        if "health score" in q:
+            return f"Your current Financial Health Score is {analysis_data.get('health_score')}."
+
+        if "spend" in q or "spent" in q:
+            for cat in self.CATEGORIES:
+                if cat.lower() in q:
+                    amount = analysis_data["category_breakdown"].get(cat, 0)
+                    return f"You have spent ${amount:.2f} on {cat}."
+            return f"Your total projected monthly spending is ${analysis_data.get('projected_spending')}."
+
+        if "subscription" in q:
+            subs = analysis_data.get("subscriptions", [])
+            if not subs:
+                return "I didn't find any recurring subscriptions."
+            names = [s["name"] for s in subs]
+            return f"I found {len(subs)} subscriptions: {', '.join(names)}."
+
+        if "debt" in q or "bnpl" in q:
+            return f"Your total BNPL spending is ${analysis_data.get('total_bnpl')}. {analysis_data.get('payoff_plan', {}).get('recommendation', '')}"
+
+        if "carbon" in q or "footprint" in q or "co2" in q:
+            return f"Your estimated carbon footprint based on spending is {analysis_data.get('carbon_footprint')} kg CO2."
+
+        return "I'm sorry, I can help you with questions about your spending, budget, debt, or carbon footprint. Try asking 'How much did I spend on food?'"
 
     def _generate_payoff_plan(self, total_debt, monthly_budget):
         """

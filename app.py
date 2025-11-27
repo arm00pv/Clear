@@ -1,7 +1,7 @@
 import os
 import csv
 import io
-from flask import Flask, render_template, redirect, url_for, Response, request
+from flask import Flask, render_template, redirect, url_for, Response, request, jsonify
 from flask_cors import CORS
 from yodlee_client import YodleeClient
 from ai_analyzer import SmartAnalyzer
@@ -61,6 +61,25 @@ def update_budget():
                 pass # Ignore invalid input
 
     return redirect(url_for('index'))
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """
+    Handles chat queries from the AI Assistant.
+    """
+    if not ACCOUNT_LINKED:
+        return jsonify({"response": "Please link your account first."})
+
+    data = request.get_json()
+    query = data.get("query", "")
+
+    # Analyze data fresh to answer questions
+    transactions = yodlee_client.get_transactions(user_id="test_user")
+    analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=USER_BUDGET)
+
+    response = smart_analyzer.get_chat_response(query, analysis)
+
+    return jsonify({"response": response})
 
 @app.route('/link-account', methods=['POST'])
 def link_account():

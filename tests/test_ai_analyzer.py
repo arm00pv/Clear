@@ -320,3 +320,32 @@ def test_payoff_plan_and_calendar():
     # Original desc was "KLARNA LOAN".
     # So "Loan" is NOT in title.
     assert "Installment" in events[0]["title"]
+
+def test_carbon_footprint():
+    """
+    Tests carbon footprint estimation.
+    """
+    analyzer = SmartAnalyzer()
+
+    # Transport has high factor (0.8). 100 spend -> 80 kg.
+    tx = [{"amount": 100.00, "category": "Transportation", "description": "UBER"}]
+    analysis = analyzer.analyze_transactions(tx)
+
+    assert analysis["carbon_footprint"] == "80.0"
+
+def test_chat_response():
+    """
+    Tests the chat query logic.
+    """
+    analyzer = SmartAnalyzer()
+
+    tx = [{"amount": 100.00, "category": "Food & Drink", "description": "Eats"}]
+    analysis = analyzer.analyze_transactions(tx)
+
+    # Test 1: Spend query
+    response = analyzer.get_chat_response("How much did I spend on Food?", analysis)
+    assert "spent $100.00 on Food & Drink" in response
+
+    # Test 2: Health Score
+    response_hs = analyzer.get_chat_response("What is my health score?", analysis)
+    assert "Financial Health Score is" in response_hs
