@@ -27,6 +27,9 @@ USER_BUDGET = {
     "Utilities": 100,
     "BNPL": 50,
 }
+
+# Mock Storage for Savings Goals
+USER_GOALS = []
 # ---
 
 @app.route('/')
@@ -43,7 +46,55 @@ def index():
         analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=USER_BUDGET)
         bnpl_total = analysis.get("total_bnpl", "0.00")
 
-    return render_template('index.html', bnpl_total=bnpl_total, account_linked=ACCOUNT_LINKED, analysis=analysis, user_budget=USER_BUDGET)
+    return render_template('index.html',
+                           bnpl_total=bnpl_total,
+                           account_linked=ACCOUNT_LINKED,
+                           analysis=analysis,
+                           user_budget=USER_BUDGET,
+                           user_goals=USER_GOALS)
+
+@app.route('/add-goal', methods=['POST'])
+def add_goal():
+    """
+    Adds a new savings goal.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    name = request.form.get('name')
+    try:
+        target = float(request.form.get('target', 0))
+    except ValueError:
+        target = 0
+
+    if name and target > 0:
+        USER_GOALS.append({
+            'id': len(USER_GOALS) + 1,
+            'name': name,
+            'target': target,
+            'current': 0.0
+        })
+
+    return redirect(url_for('index'))
+
+@app.route('/contribute-goal/<int:goal_id>', methods=['POST'])
+def contribute_goal(goal_id):
+    """
+    Simulates adding funds to a goal.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    for goal in USER_GOALS:
+        if goal['id'] == goal_id:
+            try:
+                amount = float(request.form.get('amount', 0))
+                goal['current'] += amount
+            except ValueError:
+                pass
+            break
+
+    return redirect(url_for('index'))
 
 @app.route('/update-budget', methods=['POST'])
 def update_budget():

@@ -132,6 +132,9 @@ class SmartAnalyzer:
         # Estimate Carbon Footprint
         carbon_footprint = self._estimate_carbon_footprint(category_breakdown)
 
+        # Investment Projection (based on savings potential)
+        investment_projection = self._calculate_investment_projection(savings_potential)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -152,8 +155,27 @@ class SmartAnalyzer:
             "peer_comparison": peer_comparison,
             "payoff_plan": payoff_plan,
             "calendar_events": calendar_events,
-            "carbon_footprint": f"{carbon_footprint:.1f}"
+            "carbon_footprint": f"{carbon_footprint:.1f}",
+            "investment_projection": investment_projection
         }
+
+    def _calculate_investment_projection(self, monthly_savings):
+        """
+        Projects growth of savings if invested at 7% annual return.
+        """
+        if monthly_savings <= 0:
+            return None
+
+        rate = 0.07 / 12 # Monthly rate
+        projections = {}
+
+        for years in [1, 5, 10]:
+            months = years * 12
+            # Future Value of a Series: PMT * (((1 + r)^n - 1) / r)
+            fv = monthly_savings * (((1 + rate)**months - 1) / rate)
+            projections[years] = f"{fv:.2f}"
+
+        return projections
 
     def _estimate_carbon_footprint(self, breakdown):
         """

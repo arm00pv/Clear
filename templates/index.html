@@ -72,7 +72,61 @@
                         {% endif %}
                     </div>
 
+                    {% if account_linked %}
+                    <div class="goals-section">
+                        <h3>🎯 Savings Goals</h3>
+                        <div class="goals-container">
+                            {% for goal in user_goals %}
+                                <div class="goal-card">
+                                    <div class="goal-header">
+                                        <h4>{{ goal.name }}</h4>
+                                        <span>${{ goal.current }} / ${{ goal.target }}</span>
+                                    </div>
+                                    <div class="progress-bg">
+                                        <div class="progress-fill good" style="width: {{ (goal.current / goal.target * 100)|round }}%"></div>
+                                    </div>
+                                    <form action="/contribute-goal/{{ goal.id }}" method="post" class="contribute-form">
+                                        <input type="number" name="amount" placeholder="Add $" min="1" required>
+                                        <button type="submit">+</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+
+                            <div class="add-goal-card">
+                                <h4>Create New Goal</h4>
+                                <form action="/add-goal" method="post">
+                                    <input type="text" name="name" placeholder="Goal Name (e.g. Vacation)" required>
+                                    <input type="number" name="target" placeholder="Target Amount" required>
+                                    <button type="submit">Add Goal</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if analysis %}
+                        {% if analysis.investment_projection %}
+                        <div class="investment-section">
+                            <h3>📈 Investment Potential</h3>
+                            <p>If you invested your <strong>${{ analysis.savings_potential }}</strong> monthly savings (from round-ups) at 7% annual return:</p>
+                            <div class="investment-grid">
+                                <div class="invest-card">
+                                    <span>1 Year</span>
+                                    <strong>${{ analysis.investment_projection[1] }}</strong>
+                                </div>
+                                <div class="invest-card">
+                                    <span>5 Years</span>
+                                    <strong>${{ analysis.investment_projection[5] }}</strong>
+                                </div>
+                                <div class="invest-card">
+                                    <span>10 Years</span>
+                                    <strong>${{ analysis.investment_projection[10] }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="ai-section">
                         <div class="ai-section">
                             {% if analysis.anomalies %}
                                 <div class="anomaly-alert">
