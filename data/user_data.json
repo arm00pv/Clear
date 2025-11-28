@@ -7,5 +7,19 @@
         "Utilities": 100,
         "BNPL": 50
     },
-    "goals": []
+    "goals": [],
+    "transactions": [
+        {
+            "date": "2025-01-01",
+            "description": "TestCurl",
+            "amount": 100.0,
+            "category": "Shopping"
+        },
+        {
+            "date": "2025-01-02",
+            "description": "ManualTestExpense",
+            "amount": 100.0,
+            "category": "Shopping"
+        }
+    ]
 }

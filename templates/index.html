@@ -5,12 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BNPL Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
         <div class="header-content">
             <h1>BNPL Spending Tracker</h1>
             <div class="header-actions">
+                {% if account_linked %}
+                    <button class="btn-add-tx" onclick="document.getElementById('tx-modal').style.display='block'">+ Expense</button>
+                {% endif %}
                 {% if account_linked and analysis.notifications %}
                 <div class="notification-container">
                     <button id="notif-toggle" class="btn-icon">🔔 <span class="badge-count">{{ analysis.notifications|length }}</span></button>
@@ -250,17 +254,41 @@
                             {% endif %}
 
                             <h3>📊 Category Breakdown</h3>
-                            <div class="category-list">
-                                {% for category, amount in analysis.category_breakdown.items() %}
-                                    {% if amount > 0 %}
-                                        <div class="category-item">
-                                            <span class="category-name">{{ category }}</span>
-                                            <span class="category-amount">${{ amount }}</span>
-                                            <div class="category-bar" style="width: {{ amount }}px; max-width: 100%;"></div>
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
+                            <div class="chart-container">
+                                <canvas id="categoryChart"></canvas>
                             </div>
+                            <!-- Hidden data for Chart.js -->
+                            <script>
+                                const categoryData = {
+                                    labels: [{% for cat, amt in analysis.category_breakdown.items() if amt > 0 %}"{{ cat }}",{% endfor %}],
+                                    data: [{% for cat, amt in analysis.category_breakdown.items() if amt > 0 %}{{ amt }},{% endfor %}],
+                                    colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                                };
+
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const ctx = document.getElementById('categoryChart').getContext('2d');
+                                    new Chart(ctx, {
+                                        type: 'doughnut',
+                                        data: {
+                                            labels: categoryData.labels,
+                                            datasets: [{
+                                                data: categoryData.data,
+                                                backgroundColor: categoryData.colors,
+                                                borderWidth: 1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            plugins: {
+                                                legend: {
+                                                    position: 'right',
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                            </script>
 
                             {% if analysis.bnpl_providers %}
                                 <h3>💳 BNPL Provider Breakdown</h3>
@@ -362,6 +390,29 @@
 
     <!-- Chat Widget -->
     {% if account_linked %}
+    <!-- Add Transaction Modal -->
+    <div id="tx-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('tx-modal').style.display='none'">&times;</span>
+            <h3>Add Manual Transaction</h3>
+            <form action="/add-transaction" method="post" class="tx-form">
+                <input type="date" name="date" required value="{{ 'now'|replace('now', '') }}">
+                <input type="text" name="description" placeholder="Description (e.g. Lunch)" required>
+                <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+                <select name="category" required>
+                    <option value="Food & Drink">Food & Drink</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="BNPL">BNPL</option>
+                    <option value="Uncategorized">Other</option>
+                </select>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
     <div id="chat-widget">
         <button id="chat-toggle">💬 AI Assistant</button>
         <div id="chat-window" class="hidden">

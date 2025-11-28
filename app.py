@@ -33,8 +33,28 @@ def index():
 
     if ACCOUNT_LINKED:
         # In a real app, the user_id would come from the session
-        transactions = yodlee_client.get_transactions(user_id="test_user")
-        analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=user_budget)
+        yodlee_transactions = yodlee_client.get_transactions(user_id="test_user")
+        manual_transactions = data_manager.get_transactions()
+
+        # Merge transactions
+        all_transactions = yodlee_transactions + manual_transactions
+
+        # Sort by date (descending for display, or ascending for analysis?)
+        # Let's sort descending so recent are top
+        # Need to handle date types (string vs object)
+        import datetime
+        def parse_date(tx):
+            d = tx.get("date")
+            if isinstance(d, str):
+                try:
+                    return datetime.date.fromisoformat(d)
+                except ValueError:
+                    return datetime.date.min
+            return d or datetime.date.min
+
+        all_transactions.sort(key=parse_date, reverse=True)
+
+        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget)
         bnpl_total = analysis.get("total_bnpl", "0.00")
 
     return render_template('index.html',
@@ -100,6 +120,34 @@ def update_budget():
                 pass # Ignore invalid input
 
     data_manager.update_budget(current_budget)
+
+    return redirect(url_for('index'))
+
+@app.route('/add-transaction', methods=['POST'])
+def add_transaction():
+    """
+    Adds a manual transaction.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    date = request.form.get('date')
+    description = request.form.get('description')
+    amount = request.form.get('amount')
+    category = request.form.get('category')
+
+    if date and description and amount and category:
+        try:
+            amount = float(amount)
+            # Add transaction
+            data_manager.add_transaction({
+                "date": date,
+                "description": description,
+                "amount": amount,
+                "category": category # Optional: If we want to override auto-cat
+            })
+        except ValueError:
+            pass
 
     return redirect(url_for('index'))
 

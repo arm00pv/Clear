@@ -26,7 +26,8 @@ class DataManager:
         if not os.path.exists(self.DATA_FILE):
             default_data = {
                 "budget": self.DEFAULT_BUDGET,
-                "goals": []
+                "goals": [],
+                "transactions": []
             }
             self._save_data(default_data)
 
@@ -38,7 +39,7 @@ class DataManager:
             with open(self.DATA_FILE, 'r') as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return {"budget": self.DEFAULT_BUDGET, "goals": []}
+            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": []}
 
     def _save_data(self, data):
         """
@@ -79,4 +80,15 @@ class DataManager:
                 goal['current'] += amount_added
                 break
         data["goals"] = goals
+        self._save_data(data)
+
+    def get_transactions(self):
+        data = self._load_data()
+        return data.get("transactions", [])
+
+    def add_transaction(self, transaction):
+        data = self._load_data()
+        transactions = data.get("transactions", [])
+        transactions.append(transaction)
+        data["transactions"] = transactions
         self._save_data(data)
