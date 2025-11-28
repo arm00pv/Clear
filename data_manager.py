@@ -27,7 +27,8 @@ class DataManager:
             default_data = {
                 "budget": self.DEFAULT_BUDGET,
                 "goals": [],
-                "transactions": []
+                "transactions": [],
+                "recurring_bills": []
             }
             self._save_data(default_data)
 
@@ -39,7 +40,7 @@ class DataManager:
             with open(self.DATA_FILE, 'r') as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": []}
+            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": [], "recurring_bills": []}
 
     def _save_data(self, data):
         """
@@ -91,4 +92,23 @@ class DataManager:
         transactions = data.get("transactions", [])
         transactions.append(transaction)
         data["transactions"] = transactions
+        self._save_data(data)
+
+    def get_bills(self):
+        data = self._load_data()
+        return data.get("recurring_bills", [])
+
+    def add_bill(self, bill):
+        data = self._load_data()
+        bills = data.get("recurring_bills", [])
+        bill['id'] = len(bills) + 1
+        bills.append(bill)
+        data["recurring_bills"] = bills
+        self._save_data(data)
+
+    def delete_bill(self, bill_id):
+        data = self._load_data()
+        bills = data.get("recurring_bills", [])
+        bills = [b for b in bills if b['id'] != bill_id]
+        data["recurring_bills"] = bills
         self._save_data(data)

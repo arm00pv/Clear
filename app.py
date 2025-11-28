@@ -35,6 +35,7 @@ def index():
         # In a real app, the user_id would come from the session
         yodlee_transactions = yodlee_client.get_transactions(user_id="test_user")
         manual_transactions = data_manager.get_transactions()
+        manual_bills = data_manager.get_bills()
 
         # Merge transactions
         all_transactions = yodlee_transactions + manual_transactions
@@ -54,7 +55,7 @@ def index():
 
         all_transactions.sort(key=parse_date, reverse=True)
 
-        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget)
+        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget, manual_bills=manual_bills)
         bnpl_total = analysis.get("total_bnpl", "0.00")
 
     return render_template('index.html',
@@ -149,6 +150,42 @@ def add_transaction():
         except ValueError:
             pass
 
+    return redirect(url_for('index'))
+
+@app.route('/add-bill', methods=['POST'])
+def add_bill():
+    """
+    Adds a recurring bill.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    name = request.form.get('name')
+    amount = request.form.get('amount')
+    due_date = request.form.get('due_date')
+
+    if name and amount and due_date:
+        try:
+            amount = float(amount)
+            data_manager.add_bill({
+                "name": name,
+                "amount": amount,
+                "due_date": due_date
+            })
+        except ValueError:
+            pass
+
+    return redirect(url_for('index'))
+
+@app.route('/delete-bill/<int:bill_id>', methods=['POST'])
+def delete_bill(bill_id):
+    """
+    Deletes a recurring bill.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    data_manager.delete_bill(bill_id)
     return redirect(url_for('index'))
 
 @app.route('/api/chat', methods=['POST'])

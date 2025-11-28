@@ -211,6 +211,109 @@ body.dark-mode .invest-card {
     cursor: pointer;
 }
 
+/* Bill Manager */
+.add-bill-details {
+    margin-top: 15px;
+    background: var(--accent-color);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.add-bill-details summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.add-bill-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.add-bill-form input {
+    flex: 1;
+    min-width: 100px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.add-bill-form button {
+    background: #2196f3;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 0 0 10px;
+}
+
+/* Split Tool */
+.split-tool-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.split-tool-card h3 {
+    margin-top: 0;
+    color: var(--text-color);
+}
+
+.split-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.split-form input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.split-form button {
+    background: #9c27b0;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#split-result {
+    background: var(--accent-color);
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+#split-result.hidden {
+    display: none;
+}
+
 main {
     padding: 1rem;
 }

@@ -16,13 +16,14 @@ class SmartAnalyzer:
         "Utilities": ["ELECTRIC", "WATER", "GAS", "INTERNET", "PHONE"],
     }
 
-    def analyze_transactions(self, transactions, budget_limits=None):
+    def analyze_transactions(self, transactions, budget_limits=None, manual_bills=None):
         """
         Analyzes a list of transactions to produce a comprehensive financial report.
 
         Args:
             transactions (list): A list of transaction dictionaries.
             budget_limits (dict, optional): Custom budget limits per category.
+            manual_bills (list, optional): List of user-added recurring bills.
 
         Returns:
             dict: A dictionary containing:
@@ -93,7 +94,7 @@ class SmartAnalyzer:
             })
 
         # Detect Subscriptions
-        subscriptions = self._detect_subscriptions(enriched_transactions)
+        subscriptions = self._detect_subscriptions(enriched_transactions, manual_bills)
 
         # Calculate Health Score
         total_spending = sum(category_breakdown.values())
@@ -274,6 +275,21 @@ class SmartAnalyzer:
 
         if "carbon" in q or "footprint" in q or "co2" in q:
             return f"Your estimated carbon footprint based on spending is {analysis_data.get('carbon_footprint')} kg CO2."
+
+        if "split" in q:
+            # Simple splitter logic: "split 100 by 4"
+            import re
+            match = re.search(r'split \$?(\d+(?:\.\d{1,2})?) (?:by|among|between) (\d+)', q)
+            if match:
+                amount = float(match.group(1))
+                people = int(match.group(2))
+                if people > 0:
+                    split = amount / people
+                    return f"Splitting ${amount} among {people} people: ${split:.2f} per person."
+                else:
+                    return "Number of people must be greater than zero."
+            else:
+                return "To split a bill, say something like 'split 50 by 3'."
 
         return "I'm sorry, I can help you with questions about your spending, budget, debt, or carbon footprint. Try asking 'How much did I spend on food?'"
 
@@ -577,9 +593,9 @@ class SmartAnalyzer:
         # Simple projection: 30 * average daily spend
         return daily_average * 30
 
-    def _detect_subscriptions(self, transactions):
+    def _detect_subscriptions(self, transactions, manual_bills=None):
         """
-        Identifies potential recurring subscriptions.
+        Identifies potential recurring subscriptions and merges with manual bills.
         """
         subs = []
         # In a real app, we'd look for recurring dates/amounts.
@@ -587,15 +603,30 @@ class SmartAnalyzer:
         keywords = ["NETFLIX", "SPOTIFY", "HULU", "DISNEY+", "APPLE", "AMAZON PRIME", "YOUTUBE"]
 
         seen = set()
+
+        # Add manual bills first
+        if manual_bills:
+            for bill in manual_bills:
+                subs.append({
+                    "name": bill["name"],
+                    "amount": f"{bill['amount']:.2f}",
+                    "date": bill["due_date"],
+                    "is_manual": True,
+                    "id": bill.get("id")
+                })
+                seen.add(bill["name"].upper())
+
+        # Auto-detect
         for tx in transactions:
             desc = tx["description"].upper()
             if any(k in desc for k in keywords):
-                # Avoid duplicates for this simple list
+                # Avoid duplicates if already added manually or detected
                 if desc not in seen:
                     subs.append({
                         "name": tx["description"],
                         "amount": tx["amount"],
-                        "date": tx["date"] # Last payment date
+                        "date": tx["date"], # Last payment date
+                        "is_manual": False
                     })
                     seen.add(desc)
         return subs

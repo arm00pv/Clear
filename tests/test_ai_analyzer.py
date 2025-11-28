@@ -383,6 +383,19 @@ def test_chat_response():
     response_budget = analyzer.get_chat_response("How much budget left for Food & Drink?", analysis)
     assert "$50.00 remaining" in response_budget
 
+def test_chat_split_bill():
+    """
+    Tests bill splitting chat logic.
+    """
+    analyzer = SmartAnalyzer()
+    analysis = {} # Context not needed for simple split
+
+    response = analyzer.get_chat_response("Split 60 by 3", analysis)
+    assert "$20.00 per person" in response
+
+    response_error = analyzer.get_chat_response("Split 100 by 0", analysis)
+    assert "Number of people must be greater than zero" in response_error
+
 def test_notifications():
     """
     Tests notification generation logic.

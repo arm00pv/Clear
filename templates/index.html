@@ -225,18 +225,39 @@
                             {% endif %}
 
                             {% if analysis.subscriptions %}
-                                <h3>📅 Detected Subscriptions</h3>
-                                <div class="subscription-list">
-                                    {% for sub in analysis.subscriptions %}
-                                        <div class="sub-item">
-                                            <div class="sub-icon">🎵</div> <!-- Generic icon for now -->
-                                            <div class="sub-details">
-                                                <span class="sub-name">{{ sub.name }}</span>
-                                                <span class="sub-date">Last paid: {{ sub.date }}</span>
+                                <div class="bill-manager">
+                                    <h3>📅 Recurring Bills & Subscriptions</h3>
+                                    <div class="subscription-list">
+                                        {% for sub in analysis.subscriptions %}
+                                            <div class="sub-item">
+                                                <div class="sub-icon">
+                                                    {% if sub.is_manual %}📝{% else %}🎵{% endif %}
+                                                </div>
+                                                <div class="sub-details">
+                                                    <span class="sub-name">{{ sub.name }}</span>
+                                                    <span class="sub-date">
+                                                        {% if sub.is_manual %}Due date: {{ sub.date }}{% else %}Last paid: {{ sub.date }}{% endif %}
+                                                    </span>
+                                                </div>
+                                                <div class="sub-amount">${{ sub.amount }}</div>
+                                                {% if sub.is_manual %}
+                                                    <form action="/delete-bill/{{ sub.id }}" method="post" class="delete-bill-form">
+                                                        <button type="submit" class="btn-delete" title="Delete">🗑️</button>
+                                                    </form>
+                                                {% endif %}
                                             </div>
-                                            <div class="sub-amount">${{ sub.amount }}</div>
-                                        </div>
-                                    {% endfor %}
+                                        {% endfor %}
+                                    </div>
+
+                                    <details class="add-bill-details">
+                                        <summary>➕ Add Recurring Bill</summary>
+                                        <form action="/add-bill" method="post" class="add-bill-form">
+                                            <input type="text" name="name" placeholder="Bill Name (e.g. Rent)" required>
+                                            <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+                                            <input type="date" name="due_date" required value="{{ 'now'|replace('now', '') }}">
+                                            <button type="submit">Add Bill</button>
+                                        </form>
+                                    </details>
                                 </div>
                             {% endif %}
 
@@ -385,8 +406,37 @@
                     <p>Please link a bank account to see your BNPL summary.</p>
                 {% endif %}
             </div>
+            <div class="split-tool-card">
+                <h3>➗ Bill Splitter</h3>
+                <div class="split-form">
+                    <input type="number" id="split-amount" placeholder="Amount ($)" step="0.01">
+                    <input type="number" id="split-people" placeholder="People" min="1" step="1">
+                    <button id="btn-calc-split">Calculate</button>
+                </div>
+                <div id="split-result" class="hidden">
+                    <span id="split-output"></span>
+                </div>
+            </div>
         </div>
     </main>
+
+    <script>
+        document.getElementById('btn-calc-split').addEventListener('click', function() {
+            const amount = parseFloat(document.getElementById('split-amount').value);
+            const people = parseInt(document.getElementById('split-people').value);
+            const resultDiv = document.getElementById('split-result');
+            const output = document.getElementById('split-output');
+
+            if (amount && people && people > 0) {
+                const perPerson = (amount / people).toFixed(2);
+                output.textContent = `$${perPerson} per person`;
+                resultDiv.classList.remove('hidden');
+            } else {
+                output.textContent = "Please enter valid values.";
+                resultDiv.classList.remove('hidden');
+            }
+        });
+    </script>
 
     <!-- Chat Widget -->
     {% if account_linked %}
