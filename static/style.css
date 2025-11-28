@@ -682,6 +682,90 @@ body.dark-mode .ai-section h3 {
     font-weight: bold;
 }
 
+/* Notifications */
+.notification-container {
+    position: relative;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    position: relative;
+    padding: 5px;
+}
+
+.badge-count {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #f44336;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 5px;
+    border-radius: 10px;
+}
+
+.notif-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 250px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    z-index: 1001;
+    padding: 10px;
+}
+
+.notif-dropdown.hidden {
+    display: none;
+}
+
+.notif-dropdown h4 {
+    margin: 0 0 10px 0;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.notif-dropdown ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.notif-dropdown li {
+    font-size: 0.85rem;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notif-dropdown li:last-child {
+    border-bottom: none;
+}
+
+.notif-dropdown li.alert { color: #f44336; font-weight: bold; }
+.notif-dropdown li.warning { color: #ff9800; }
+.notif-dropdown li.info { color: #2196f3; }
+
+/* Carbon Meter */
+.carbon-meter {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.carbon-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #ffeb3b, #f44336);
+}
+
 #chat-window {
     position: absolute;
     bottom: 60px;

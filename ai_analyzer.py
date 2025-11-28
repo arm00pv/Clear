@@ -135,6 +135,9 @@ class SmartAnalyzer:
         # Investment Projection (based on savings potential)
         investment_projection = self._calculate_investment_projection(savings_potential)
 
+        # Generate Notifications
+        notifications = self._generate_notifications(calendar_events, budget_analysis)
+
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
@@ -156,8 +159,39 @@ class SmartAnalyzer:
             "payoff_plan": payoff_plan,
             "calendar_events": calendar_events,
             "carbon_footprint": f"{carbon_footprint:.1f}",
-            "investment_projection": investment_projection
+            "investment_projection": investment_projection,
+            "notifications": notifications
         }
+
+    def _generate_notifications(self, events, budget_analysis):
+        """
+        Generates alerts for upcoming bills and budget issues.
+        """
+        notifications = []
+        import datetime
+        today = datetime.date.today()
+
+        # Check upcoming events in next 7 days
+        for event in events:
+            try:
+                event_date = datetime.date.fromisoformat(event["date"])
+                days_until = (event_date - today).days
+                if 0 <= days_until <= 7:
+                    msg = f"Upcoming: {event['title']} (${event['amount']}) due in {days_until} days."
+                    if days_until == 0:
+                        msg = f"Due Today: {event['title']} (${event['amount']})."
+                    notifications.append({"type": "info", "message": msg})
+            except ValueError:
+                continue
+
+        # Check budget alerts
+        for item in budget_analysis:
+            if item["status"] == "danger":
+                notifications.append({"type": "alert", "message": f"Budget Exceeded: You are over limit for {item['category']}!"})
+            elif item["status"] == "warning":
+                notifications.append({"type": "warning", "message": f"Budget Warning: {item['category']} is near limit."})
+
+        return notifications
 
     def _calculate_investment_projection(self, monthly_savings):
         """
@@ -206,6 +240,20 @@ class SmartAnalyzer:
 
         if "health score" in q:
             return f"Your current Financial Health Score is {analysis_data.get('health_score')}."
+
+        if "budget" in q and ("left" in q or "remaining" in q):
+            # Find which budget
+            for cat in self.CATEGORIES:
+                if cat.lower() in q:
+                    # Find limit from budget_analysis
+                    for item in analysis_data.get("budget_analysis", []):
+                        if item["category"] == cat:
+                            remaining = item["limit"] - item["amount"]
+                            if remaining >= 0:
+                                return f"You have ${remaining:.2f} remaining for {cat}."
+                            else:
+                                return f"You are over budget for {cat} by ${abs(remaining):.2f}."
+            return "Please specify which category budget you are asking about."
 
         if "spend" in q or "spent" in q:
             for cat in self.CATEGORIES:

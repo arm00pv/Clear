@@ -5,6 +5,7 @@ from flask import Flask, render_template, redirect, url_for, Response, request, 
 from flask_cors import CORS
 from yodlee_client import YodleeClient
 from ai_analyzer import SmartAnalyzer
+from data_manager import DataManager
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -17,19 +18,7 @@ YODLEE_API_KEY = "your_api_key"
 YODLEE_SECRET = "your_secret"
 yodlee_client = YodleeClient(YODLEE_API_KEY, YODLEE_SECRET)
 smart_analyzer = SmartAnalyzer()
-
-# Mock Storage for User Budget
-USER_BUDGET = {
-    "Food & Drink": 150,
-    "Transportation": 100,
-    "Shopping": 100,
-    "Entertainment": 50,
-    "Utilities": 100,
-    "BNPL": 50,
-}
-
-# Mock Storage for Savings Goals
-USER_GOALS = []
+data_manager = DataManager()
 # ---
 
 @app.route('/')
@@ -39,19 +28,21 @@ def index():
     """
     bnpl_total = "0.00"
     analysis = {}
+    user_budget = data_manager.get_budget()
+    user_goals = data_manager.get_goals()
 
     if ACCOUNT_LINKED:
         # In a real app, the user_id would come from the session
         transactions = yodlee_client.get_transactions(user_id="test_user")
-        analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=USER_BUDGET)
+        analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=user_budget)
         bnpl_total = analysis.get("total_bnpl", "0.00")
 
     return render_template('index.html',
                            bnpl_total=bnpl_total,
                            account_linked=ACCOUNT_LINKED,
                            analysis=analysis,
-                           user_budget=USER_BUDGET,
-                           user_goals=USER_GOALS)
+                           user_budget=user_budget,
+                           user_goals=user_goals)
 
 @app.route('/add-goal', methods=['POST'])
 def add_goal():
@@ -68,8 +59,7 @@ def add_goal():
         target = 0
 
     if name and target > 0:
-        USER_GOALS.append({
-            'id': len(USER_GOALS) + 1,
+        data_manager.add_goal({
             'name': name,
             'target': target,
             'current': 0.0
@@ -85,14 +75,11 @@ def contribute_goal(goal_id):
     if not ACCOUNT_LINKED:
         return redirect(url_for('index'))
 
-    for goal in USER_GOALS:
-        if goal['id'] == goal_id:
-            try:
-                amount = float(request.form.get('amount', 0))
-                goal['current'] += amount
-            except ValueError:
-                pass
-            break
+    try:
+        amount = float(request.form.get('amount', 0))
+        data_manager.update_goal(goal_id, amount)
+    except ValueError:
+        pass
 
     return redirect(url_for('index'))
 
@@ -104,12 +91,15 @@ def update_budget():
     if not ACCOUNT_LINKED:
         return redirect(url_for('index'))
 
-    for category in USER_BUDGET:
+    current_budget = data_manager.get_budget()
+    for category in current_budget:
         if category in request.form:
             try:
-                USER_BUDGET[category] = float(request.form[category])
+                current_budget[category] = float(request.form[category])
             except ValueError:
                 pass # Ignore invalid input
+
+    data_manager.update_budget(current_budget)
 
     return redirect(url_for('index'))
 
@@ -124,9 +114,11 @@ def chat():
     data = request.get_json()
     query = data.get("query", "")
 
+    user_budget = data_manager.get_budget()
+
     # Analyze data fresh to answer questions
     transactions = yodlee_client.get_transactions(user_id="test_user")
-    analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=USER_BUDGET)
+    analysis = smart_analyzer.analyze_transactions(transactions, budget_limits=user_budget)
 
     response = smart_analyzer.get_chat_response(query, analysis)
 

@@ -1,0 +1,11 @@
+{
+    "budget": {
+        "Food & Drink": 150,
+        "Transportation": 100,
+        "Shopping": 100,
+        "Entertainment": 50,
+        "Utilities": 100,
+        "BNPL": 50
+    },
+    "goals": []
+}
