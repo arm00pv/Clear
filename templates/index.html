@@ -13,6 +13,12 @@
             <h1>BNPL Spending Tracker</h1>
             <div class="header-actions">
                 {% if account_linked %}
+                    <div class="user-level">
+                        <span class="level-badge">Lvl {{ analysis.level_info.current_level }}</span>
+                        <div class="level-progress">
+                            <div class="level-fill" style="width: {{ analysis.level_info.progress_percent }}%"></div>
+                        </div>
+                    </div>
                     <button class="btn-add-tx" onclick="document.getElementById('tx-modal').style.display='block'">+ Expense</button>
                 {% endif %}
                 {% if account_linked and analysis.notifications %}
@@ -214,6 +220,27 @@
                                     </details>
                                 </div>
                             {% endif %}
+
+                            <div class="settings-section">
+                                <details>
+                                    <summary>⚙️ Data Management</summary>
+                                    <div class="settings-content">
+                                        <div class="setting-item">
+                                            <h4>Backup Data</h4>
+                                            <p>Download a copy of your data.</p>
+                                            <a href="/backup-data" class="btn-download">Download JSON</a>
+                                        </div>
+                                        <div class="setting-item">
+                                            <h4>Restore Data</h4>
+                                            <p>Upload a previously backed up JSON file.</p>
+                                            <form action="/restore-data" method="post" enctype="multipart/form-data">
+                                                <input type="file" name="backup_file" accept=".json" required>
+                                                <button type="submit">Restore</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
 
                             {% if analysis.peer_comparison %}
                                 <h3>👥 Peer Benchmarks</h3>

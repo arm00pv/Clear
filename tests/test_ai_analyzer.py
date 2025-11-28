@@ -396,6 +396,32 @@ def test_chat_split_bill():
     response_error = analyzer.get_chat_response("Split 100 by 0", analysis)
     assert "Number of people must be greater than zero" in response_error
 
+def test_level_calculation():
+    """
+    Tests XP level calculation.
+    """
+    analyzer = SmartAnalyzer()
+
+    # 0 XP -> Level 1, 0%
+    l1 = analyzer._calculate_level(0)
+    assert l1["current_level"] == 1
+    assert l1["progress_percent"] == 0
+
+    # 100 XP -> Level 2 (Threshold for L1 was 100)
+    # Logic: while xp >= threshold. 100 >= 100.
+    # xp becomes 0. level becomes 2. threshold becomes 150.
+    l2 = analyzer._calculate_level(100)
+    assert l2["current_level"] == 2
+    assert l2["progress_percent"] == 0
+
+    # 150 XP -> Level 2 + Progress
+    # 150 - 100 = 50 remaining.
+    # Next threshold is 150.
+    # Progress: 50 / 150 = 33%
+    l2_prog = analyzer._calculate_level(150)
+    assert l2_prog["current_level"] == 2
+    assert l2_prog["progress_percent"] == 33
+
 def test_notifications():
     """
     Tests notification generation logic.

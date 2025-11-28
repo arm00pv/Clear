@@ -28,7 +28,8 @@ class DataManager:
                 "budget": self.DEFAULT_BUDGET,
                 "goals": [],
                 "transactions": [],
-                "recurring_bills": []
+                "recurring_bills": [],
+                "xp": 0
             }
             self._save_data(default_data)
 
@@ -40,7 +41,7 @@ class DataManager:
             with open(self.DATA_FILE, 'r') as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": [], "recurring_bills": []}
+            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": [], "recurring_bills": [], "xp": 0}
 
     def _save_data(self, data):
         """
@@ -112,3 +113,21 @@ class DataManager:
         bills = [b for b in bills if b['id'] != bill_id]
         data["recurring_bills"] = bills
         self._save_data(data)
+
+    def get_xp(self):
+        data = self._load_data()
+        return data.get("xp", 0)
+
+    def add_xp(self, points):
+        data = self._load_data()
+        current = data.get("xp", 0)
+        data["xp"] = current + points
+        self._save_data(data)
+
+    def get_all_data(self):
+        return self._load_data()
+
+    def replace_all_data(self, new_data):
+        # Validate schema basics
+        if isinstance(new_data, dict):
+            self._save_data(new_data)

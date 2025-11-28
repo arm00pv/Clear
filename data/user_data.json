@@ -20,6 +20,12 @@
             "description": "ManualTestExpense",
             "amount": 100.0,
             "category": "Shopping"
+        },
+        {
+            "date": "2025-01-03",
+            "description": "XPTest",
+            "amount": 10.0,
+            "category": "Shopping"
         }
     ],
     "recurring_bills": [
@@ -41,5 +47,6 @@
             "due_date": "2025-01-20",
             "id": 3
         }
-    ]
+    ],
+    "xp": 10
 }

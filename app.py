@@ -30,6 +30,7 @@ def index():
     analysis = {}
     user_budget = data_manager.get_budget()
     user_goals = data_manager.get_goals()
+    user_xp = data_manager.get_xp()
 
     if ACCOUNT_LINKED:
         # In a real app, the user_id would come from the session
@@ -55,7 +56,8 @@ def index():
 
         all_transactions.sort(key=parse_date, reverse=True)
 
-        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget, manual_bills=manual_bills)
+        # Pass current_xp to analysis if you want to use it for display or logic
+        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget, manual_bills=manual_bills, current_xp=user_xp)
         bnpl_total = analysis.get("total_bnpl", "0.00")
 
     return render_template('index.html',
@@ -85,6 +87,7 @@ def add_goal():
             'target': target,
             'current': 0.0
         })
+        data_manager.add_xp(20) # Award XP
 
     return redirect(url_for('index'))
 
@@ -121,6 +124,7 @@ def update_budget():
                 pass # Ignore invalid input
 
     data_manager.update_budget(current_budget)
+    data_manager.add_xp(5) # Award XP
 
     return redirect(url_for('index'))
 
@@ -147,6 +151,7 @@ def add_transaction():
                 "amount": amount,
                 "category": category # Optional: If we want to override auto-cat
             })
+            data_manager.add_xp(10) # Award XP
         except ValueError:
             pass
 
@@ -172,6 +177,7 @@ def add_bill():
                 "amount": amount,
                 "due_date": due_date
             })
+            data_manager.add_xp(15) # Award XP
         except ValueError:
             pass
 
@@ -208,6 +214,46 @@ def chat():
     response = smart_analyzer.get_chat_response(query, analysis)
 
     return jsonify({"response": response})
+
+@app.route('/backup-data')
+def backup_data():
+    """
+    Exports all user data as a JSON file.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    data = data_manager.get_all_data()
+    return Response(
+        json.dumps(data, indent=4),
+        mimetype="application/json",
+        headers={"Content-disposition": "attachment; filename=bnpl_tracker_backup.json"}
+    )
+
+@app.route('/restore-data', methods=['POST'])
+def restore_data():
+    """
+    Restores user data from a JSON file.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    if 'backup_file' not in request.files:
+        return redirect(url_for('index'))
+
+    file = request.files['backup_file']
+    if file.filename == '':
+        return redirect(url_for('index'))
+
+    if file:
+        try:
+            content = file.read()
+            data = json.loads(content)
+            data_manager.replace_all_data(data)
+        except Exception:
+            pass # Handle error gracefully
+
+    return redirect(url_for('index'))
 
 @app.route('/link-account', methods=['POST'])
 def link_account():

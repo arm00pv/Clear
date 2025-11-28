@@ -16,7 +16,7 @@ class SmartAnalyzer:
         "Utilities": ["ELECTRIC", "WATER", "GAS", "INTERNET", "PHONE"],
     }
 
-    def analyze_transactions(self, transactions, budget_limits=None, manual_bills=None):
+    def analyze_transactions(self, transactions, budget_limits=None, manual_bills=None, current_xp=0):
         """
         Analyzes a list of transactions to produce a comprehensive financial report.
 
@@ -24,6 +24,7 @@ class SmartAnalyzer:
             transactions (list): A list of transaction dictionaries.
             budget_limits (dict, optional): Custom budget limits per category.
             manual_bills (list, optional): List of user-added recurring bills.
+            current_xp (int, optional): Current user XP points.
 
         Returns:
             dict: A dictionary containing:
@@ -115,6 +116,9 @@ class SmartAnalyzer:
         # Analyze Budget (Comparison)
         budget_analysis = self._analyze_budget(category_breakdown, budget_limits)
 
+        # Calculate Level
+        level_info = self._calculate_level(current_xp)
+
         # Generate Payoff Plan
         bnpl_limit = 50 # Default
         if budget_limits and "BNPL" in budget_limits:
@@ -161,7 +165,30 @@ class SmartAnalyzer:
             "calendar_events": calendar_events,
             "carbon_footprint": f"{carbon_footprint:.1f}",
             "investment_projection": investment_projection,
-            "notifications": notifications
+            "notifications": notifications,
+            "level_info": level_info
+        }
+
+    def _calculate_level(self, xp):
+        """
+        Calculates user level based on XP.
+        Level 1: 0-100
+        Level 2: 101-300
+        Level 3: 301-600
+        etc.
+        """
+        level = 1
+        threshold = 100
+        while xp >= threshold:
+            xp -= threshold
+            level += 1
+            threshold += 50 # Increase threshold for next level
+
+        return {
+            "current_level": level,
+            "current_xp": xp,
+            "next_level_xp": threshold,
+            "progress_percent": int((xp / threshold) * 100)
         }
 
     def _generate_notifications(self, events, budget_analysis):
