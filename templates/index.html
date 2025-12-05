@@ -172,6 +172,45 @@
                                 {% endfor %}
                             </div>
 
+                            {% if analysis.challenges %}
+                                <h3>⚔️ Daily Quests</h3>
+                                <div class="challenges-grid">
+                                    {% for quest in analysis.challenges %}
+                                        <div class="quest-card {% if quest.completed %}completed{% endif %}">
+                                            <div class="quest-header">
+                                                <h4>{{ quest.title }}</h4>
+                                                <span class="quest-reward">+{{ quest.reward }} XP</span>
+                                            </div>
+                                            <p>{{ quest.desc }}</p>
+
+                                            {% if not quest.completed %}
+                                                <div class="quest-status">
+                                                    <span>{{ quest.current }} / {{ quest.target }}</span>
+                                                    {% if quest.can_claim %}
+                                                        <form action="/claim-challenge/{{ quest.uid }}" method="post" style="display:inline;">
+                                                            <button type="submit" class="btn-claim">Claim!</button>
+                                                        </form>
+                                                    {% else %}
+                                                        <span class="status-badge">In Progress</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="status-badge completed">Completed</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if analysis.tag_analysis %}
+                                <h3>🏷️ Tag Insights</h3>
+                                <div class="tag-cloud">
+                                    {% for tag, amount in analysis.tag_analysis.items() %}
+                                        <span class="tag-pill">#{{ tag }} <small>${{ amount }}</small></span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
                             {% if analysis.achievements %}
                                 <h3>🏅 Achievements Unlocked</h3>
                                 <div class="achievements-grid">
@@ -208,15 +247,21 @@
 
                                     <details class="budget-settings">
                                         <summary>⚙️ Adjust Budget Goals</summary>
-                                        <form action="/update-budget" method="post" class="budget-form">
-                                            {% for category, limit in user_budget.items() %}
-                                                <div class="form-group">
-                                                    <label for="budget-{{ loop.index }}">{{ category }}</label>
-                                                    <input type="number" id="budget-{{ loop.index }}" name="{{ category }}" value="{{ limit }}">
-                                                </div>
-                                            {% endfor %}
-                                            <button type="submit">Update Budget</button>
-                                        </form>
+                                        <div class="budget-controls">
+                                            <form action="/auto-budget" method="post" class="auto-budget-form" style="margin-bottom: 15px;">
+                                                <button type="submit" class="btn-auto-budget" title="Let AI suggest a budget based on your spending history">✨ Auto-Set Budget (AI)</button>
+                                            </form>
+
+                                            <form action="/update-budget" method="post" class="budget-form">
+                                                {% for category, limit in user_budget.items() %}
+                                                    <div class="form-group">
+                                                        <label for="budget-{{ loop.index }}">{{ category }}</label>
+                                                        <input type="number" id="budget-{{ loop.index }}" name="{{ category }}" value="{{ limit }}">
+                                                    </div>
+                                                {% endfor %}
+                                                <button type="submit">Update Budget</button>
+                                            </form>
+                                        </div>
                                     </details>
                                 </div>
                             {% endif %}
@@ -474,8 +519,9 @@
             <h3>Add Manual Transaction</h3>
             <form action="/add-transaction" method="post" class="tx-form">
                 <input type="date" name="date" required value="{{ 'now'|replace('now', '') }}">
-                <input type="text" name="description" placeholder="Description (e.g. Lunch)" required>
+                <input type="text" name="description" placeholder="Description (e.g. Lunch #work)" required>
                 <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+                <input type="text" name="tags" placeholder="Tags (e.g. #vacation, #coffee)">
                 <select name="category" required>
                     <option value="Food & Drink">Food & Drink</option>
                     <option value="Shopping">Shopping</option>

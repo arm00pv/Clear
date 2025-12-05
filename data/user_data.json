@@ -26,6 +26,12 @@
             "description": "XPTest",
             "amount": 10.0,
             "category": "Shopping"
+        },
+        {
+            "date": "2025-01-04",
+            "description": "ChallengeTest",
+            "amount": 1.0,
+            "category": "Shopping"
         }
     ],
     "recurring_bills": [
@@ -48,5 +54,40 @@
             "id": 3
         }
     ],
-    "xp": 10
+    "xp": 20,
+    "challenges": {
+        "date": "2025-12-03",
+        "active": [
+            {
+                "title": "Coffee at Home",
+                "desc": "Skip the cafe and make coffee at home.",
+                "reward": 20,
+                "target": 1,
+                "uid": "ch_coffee",
+                "current": 0,
+                "completed": false,
+                "can_claim": false
+            },
+            {
+                "title": "Under $10 Lunch",
+                "desc": "Spend less than $10 on lunch.",
+                "reward": 30,
+                "target": 1,
+                "uid": "ch_lunch",
+                "current": 0,
+                "completed": false,
+                "can_claim": false
+            },
+            {
+                "title": "Zero Spend Day",
+                "desc": "Don't spend any money today (bills excluded).",
+                "reward": 50,
+                "target": 1,
+                "uid": "ch_zero",
+                "current": 0,
+                "completed": false,
+                "can_claim": false
+            }
+        ]
+    }
 }

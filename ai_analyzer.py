@@ -16,7 +16,7 @@ class SmartAnalyzer:
         "Utilities": ["ELECTRIC", "WATER", "GAS", "INTERNET", "PHONE"],
     }
 
-    def analyze_transactions(self, transactions, budget_limits=None, manual_bills=None, current_xp=0):
+    def analyze_transactions(self, transactions, budget_limits=None, manual_bills=None, current_xp=0, active_challenges=None):
         """
         Analyzes a list of transactions to produce a comprehensive financial report.
 
@@ -25,6 +25,7 @@ class SmartAnalyzer:
             budget_limits (dict, optional): Custom budget limits per category.
             manual_bills (list, optional): List of user-added recurring bills.
             current_xp (int, optional): Current user XP points.
+            active_challenges (list, optional): List of current daily challenges.
 
         Returns:
             dict: A dictionary containing:
@@ -35,6 +36,12 @@ class SmartAnalyzer:
                 - recent_transactions (list): The list of transactions, potentially enriched.
                 - payoff_plan (dict): Debt payoff calculations and recommendations.
                 - calendar_events (list): Merged list of upcoming installments and payments.
+                - carbon_footprint (str): Estimated carbon footprint in kg CO2.
+                - investment_projection (dict): Projected growth of savings.
+                - notifications (list): Alerts for bills and budget.
+                - level_info (dict): User level and progress.
+                - challenges (list): Active challenges with progress status.
+                - tag_analysis (dict): Spending by tag.
         """
         total_bnpl = 0.0
         category_breakdown = {cat: 0.0 for cat in self.CATEGORIES}
@@ -260,12 +267,110 @@ class SmartAnalyzer:
 
         return total_co2
 
+    def calculate_recommended_budget(self, transactions):
+        """
+        Analyzes past transactions to recommend a realistic budget.
+        Averages spending per category over the available period.
+        """
+        if not transactions:
+            return self.CATEGORIES # Return default keys
+
+        # Group by category
+        cat_totals = {cat: 0.0 for cat in self.CATEGORIES}
+        cat_totals["Uncategorized"] = 0.0
+
+        # Calculate time span
+        import datetime
+        dates = []
+        for t in transactions:
+            try:
+                d = t.get("date")
+                if isinstance(d, str):
+                    d = datetime.date.fromisoformat(d)
+                if d: dates.append(d)
+            except ValueError:
+                continue
+
+        if not dates:
+            return {k: 100.0 for k in cat_totals} # Fallback
+
+        days = (max(dates) - min(dates)).days + 1
+        months = max(1, days / 30.0)
+
+        for tx in transactions:
+            desc = tx.get("description", "").upper()
+            amt = float(tx.get("amount", 0))
+
+            # Simple re-categorization logic for calculation (duplicating analyze logic roughly)
+            # Ideally we'd use the enriched transactions, but this method takes raw transactions usually.
+            # Let's trust the keys match self.CATEGORIES
+            assigned = False
+            for cat, keywords in self.CATEGORIES.items():
+                if any(k in desc for k in keywords):
+                    cat_totals[cat] += amt
+                    assigned = True
+                    break
+            if not assigned:
+                cat_totals["Uncategorized"] += amt
+
+        # Calculate monthly average and apply a "saving factor" (e.g. 95% of average)
+        recommended = {}
+        for cat, total in cat_totals.items():
+            avg = total / months
+            # Suggest slightly less to encourage saving, but round to nearest 10
+            rec = round((avg * 0.95) / 10) * 10
+            recommended[cat] = max(rec, 50.0) # Minimum budget 50
+
+        return recommended
+
     def get_chat_response(self, query, analysis_data):
         """
         Generates a response to a user question based on the analysis data.
         """
         q = query.lower()
 
+        # Enhanced Intents
+
+        # 1. Budget Recommendation
+        if "recommend" in q and "budget" in q:
+            # We can't run calculation here easily without raw transactions,
+            # but we can give general advice or check if the user is way over/under.
+            return "I can analyze your spending habits to recommend a budget. Click the 'Auto-Set Budget' button on the dashboard!"
+
+        # 2. Affordability Check
+        if "can i afford" in q or "buy" in q:
+            # Extract amount
+            import re
+            match = re.search(r'\$?(\d+(?:\.\d{1,2})?)', q)
+            if match:
+                amount = float(match.group(1))
+                # Check against 'Uncategorized' or general savings potential
+                # Or check if any budget has room
+                budget_status = analysis_data.get("budget_analysis", [])
+                total_remaining = 0
+                for b in budget_status:
+                    rem = b["limit"] - b["amount"]
+                    if rem > 0: total_remaining += rem
+
+                if total_remaining > amount:
+                     return f"Based on your remaining budget (${total_remaining:.2f}), you can likely afford this ${amount:.2f} purchase. However, check if it fits your savings goals!"
+                else:
+                     return f"It might be tight. You only have ${total_remaining:.2f} left in your overall budget. Consider waiting."
+            else:
+                return "How much does the item cost? (e.g., 'Can I afford $50?')"
+
+        # 3. Highest Expense
+        if "highest" in q or "biggest" in q or "most expensive" in q:
+            txs = analysis_data.get("recent_transactions", [])
+            if txs:
+                # Sort by amount (descending)
+                sorted_tx = sorted(txs, key=lambda x: float(x["amount"]), reverse=True)
+                top = sorted_tx[0]
+                return f"Your highest recent expense was {top['description']} for ${top['amount']} on {top['date']}."
+            else:
+                return "I don't see any recent transactions."
+
+        # Existing checks
         if "health score" in q:
             return f"Your current Financial Health Score is {analysis_data.get('health_score')}."
 
@@ -301,7 +406,10 @@ class SmartAnalyzer:
             return f"Your total BNPL spending is ${analysis_data.get('total_bnpl')}. {analysis_data.get('payoff_plan', {}).get('recommendation', '')}"
 
         if "carbon" in q or "footprint" in q or "co2" in q:
-            return f"Your estimated carbon footprint based on spending is {analysis_data.get('carbon_footprint')} kg CO2."
+            co2 = float(analysis_data.get('carbon_footprint', 0))
+            trees = co2 / 25.0 # Approx 25kg/tree/year
+            miles = co2 * 2.5 # Approx 2.5 miles/kg
+            return f"Your estimated footprint is {co2} kg CO2. That's roughly equivalent to driving {miles:.1f} miles or requires {trees:.1f} trees to absorb in a year."
 
         if "split" in q:
             # Simple splitter logic: "split 100 by 4"
@@ -684,6 +792,35 @@ class SmartAnalyzer:
             score -= 20
 
         return max(0, score)
+
+    def generate_daily_challenges(self):
+        """
+        Generates 3 random daily financial challenges.
+        """
+        challenges_pool = [
+            {"title": "Zero Spend Day", "desc": "Don't spend any money today (bills excluded).", "reward": 50, "target": 1, "uid": "ch_zero"},
+            {"title": "Coffee at Home", "desc": "Skip the cafe and make coffee at home.", "reward": 20, "target": 1, "uid": "ch_coffee"},
+            {"title": "Under $10 Lunch", "desc": "Spend less than $10 on lunch.", "reward": 30, "target": 1, "uid": "ch_lunch"},
+            {"title": "Review Subscriptions", "desc": "Check your recurring bills for unused subs.", "reward": 40, "target": 1, "uid": "ch_sub"},
+            {"title": "Add a Savings Goal", "desc": "Create a new savings goal in the app.", "reward": 25, "target": 1, "uid": "ch_goal"},
+            {"title": "Check Health Score", "desc": "View your financial health score.", "reward": 10, "target": 1, "uid": "ch_health"},
+        ]
+
+        # Select 3 random unique challenges
+        import random
+        selected = random.sample(challenges_pool, 3)
+
+        # Add tracking fields
+        for ch in selected:
+            ch["current"] = 0
+            ch["completed"] = False
+            ch["can_claim"] = False # Logic to verify completion would go here
+            # For simulation, let's make "Check Health Score" claimable immediately
+            if ch["uid"] == "ch_health":
+                ch["current"] = 1
+                ch["can_claim"] = True
+
+        return selected
 
     def _generate_insights(self, breakdown, habits, total_bnpl):
         """

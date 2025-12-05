@@ -29,7 +29,8 @@ class DataManager:
                 "goals": [],
                 "transactions": [],
                 "recurring_bills": [],
-                "xp": 0
+                "xp": 0,
+                "challenges": {"date": None, "active": []}
             }
             self._save_data(default_data)
 
@@ -41,7 +42,7 @@ class DataManager:
             with open(self.DATA_FILE, 'r') as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": [], "recurring_bills": [], "xp": 0}
+            return {"budget": self.DEFAULT_BUDGET, "goals": [], "transactions": [], "recurring_bills": [], "xp": 0, "challenges": {"date": None, "active": []}}
 
     def _save_data(self, data):
         """
@@ -131,3 +132,31 @@ class DataManager:
         # Validate schema basics
         if isinstance(new_data, dict):
             self._save_data(new_data)
+
+    def get_challenges_data(self):
+        data = self._load_data()
+        return data.get("challenges", {"date": None, "active": []})
+
+    def set_challenges(self, date, challenges):
+        data = self._load_data()
+        data["challenges"] = {"date": date, "active": challenges}
+        self._save_data(data)
+
+    def mark_challenge_complete(self, challenge_id):
+        data = self._load_data()
+        challenges_data = data.get("challenges", {"date": None, "active": []})
+        challenges = challenges_data.get("active", [])
+
+        # Ensure we have a list
+        if not isinstance(challenges, list):
+            challenges = []
+
+        for ch in challenges:
+            # Match by UID which is unique per day
+            if ch.get("uid") == challenge_id and not ch.get("completed", False):
+                ch["completed"] = True
+                break
+
+        challenges_data["active"] = challenges
+        data["challenges"] = challenges_data
+        self._save_data(data)

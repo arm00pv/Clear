@@ -33,6 +33,18 @@ def index():
     user_xp = data_manager.get_xp()
 
     if ACCOUNT_LINKED:
+        import datetime
+        today = datetime.date.today().isoformat()
+
+        # Check challenges
+        challenges_data = data_manager.get_challenges_data()
+        if challenges_data["date"] != today:
+            new_challenges = smart_analyzer.generate_daily_challenges()
+            data_manager.set_challenges(today, new_challenges)
+            active_challenges = new_challenges
+        else:
+            active_challenges = challenges_data["active"]
+
         # In a real app, the user_id would come from the session
         yodlee_transactions = yodlee_client.get_transactions(user_id="test_user")
         manual_transactions = data_manager.get_transactions()
@@ -44,7 +56,6 @@ def index():
         # Sort by date (descending for display, or ascending for analysis?)
         # Let's sort descending so recent are top
         # Need to handle date types (string vs object)
-        import datetime
         def parse_date(tx):
             d = tx.get("date")
             if isinstance(d, str):
@@ -57,7 +68,7 @@ def index():
         all_transactions.sort(key=parse_date, reverse=True)
 
         # Pass current_xp to analysis if you want to use it for display or logic
-        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget, manual_bills=manual_bills, current_xp=user_xp)
+        analysis = smart_analyzer.analyze_transactions(all_transactions, budget_limits=user_budget, manual_bills=manual_bills, current_xp=user_xp, active_challenges=active_challenges)
         bnpl_total = analysis.get("total_bnpl", "0.00")
 
     return render_template('index.html',
@@ -125,6 +136,26 @@ def update_budget():
 
     data_manager.update_budget(current_budget)
     data_manager.add_xp(5) # Award XP
+
+    return redirect(url_for('index'))
+
+@app.route('/auto-budget', methods=['POST'])
+def auto_budget():
+    """
+    Automatically sets the budget based on AI recommendations.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    # Fetch all transactions to analyze
+    yodlee_transactions = yodlee_client.get_transactions(user_id="test_user")
+    manual_transactions = data_manager.get_transactions()
+    all_transactions = yodlee_transactions + manual_transactions
+
+    recommended = smart_analyzer.calculate_recommended_budget(all_transactions)
+
+    data_manager.update_budget(recommended)
+    data_manager.add_xp(25) # Award XP for using AI tools
 
     return redirect(url_for('index'))
 
@@ -214,6 +245,30 @@ def chat():
     response = smart_analyzer.get_chat_response(query, analysis)
 
     return jsonify({"response": response})
+
+@app.route('/claim-challenge/<challenge_id>', methods=['POST'])
+def claim_challenge(challenge_id):
+    """
+    Claims reward for a completed challenge.
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    data_manager.mark_challenge_complete(challenge_id)
+    # Get challenge reward (simplification: assume 50 XP if not easily retrievable without lookup)
+    # Ideally we look up the challenge details.
+    # For now, let's just award a flat XP amount or try to find it.
+    challenges = data_manager.get_challenges_data().get("active", [])
+    reward = 0
+    for ch in challenges:
+        if ch.get("uid") == challenge_id and ch.get("completed"):
+            reward = ch.get("reward", 50)
+            break
+
+    if reward > 0:
+        data_manager.add_xp(reward)
+
+    return redirect(url_for('index'))
 
 @app.route('/backup-data')
 def backup_data():
