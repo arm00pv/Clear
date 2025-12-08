@@ -1,6 +1,7 @@
 import os
 import csv
 import io
+import json
 from flask import Flask, render_template, redirect, url_for, Response, request, jsonify
 from flask_cors import CORS
 from yodlee_client import YodleeClient
@@ -223,6 +224,56 @@ def delete_bill(bill_id):
         return redirect(url_for('index'))
 
     data_manager.delete_bill(bill_id)
+    return redirect(url_for('index'))
+
+@app.route('/import-csv', methods=['POST'])
+def import_csv():
+    """
+    Imports transactions from an uploaded CSV file.
+    Expects columns: Date, Description, Amount, Category (optional)
+    """
+    if not ACCOUNT_LINKED:
+        return redirect(url_for('index'))
+
+    if 'csv_file' not in request.files:
+        return redirect(url_for('index'))
+
+    file = request.files['csv_file']
+    if file.filename == '':
+        return redirect(url_for('index'))
+
+    if file:
+        try:
+            # Parse CSV
+            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+            reader = csv.DictReader(stream)
+
+            new_txs = []
+            for row in reader:
+                # Basic validation and cleaning
+                date = row.get("Date") or row.get("date")
+                desc = row.get("Description") or row.get("description")
+                amt = row.get("Amount") or row.get("amount")
+                cat = row.get("Category") or row.get("category")
+
+                if date and desc and amt:
+                    try:
+                        new_txs.append({
+                            "date": date,
+                            "description": desc,
+                            "amount": float(amt),
+                            "category": cat or "Uncategorized"
+                        })
+                    except ValueError:
+                        continue
+
+            if new_txs:
+                data_manager.add_transactions_bulk(new_txs)
+                data_manager.add_xp(len(new_txs) * 2) # XP per transaction imported
+
+        except Exception as e:
+            print(f"Error importing CSV: {e}")
+
     return redirect(url_for('index'))
 
 @app.route('/api/chat', methods=['POST'])

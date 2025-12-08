@@ -153,6 +153,9 @@ class SmartAnalyzer:
         # Generate Insights
         insights = self._generate_insights(category_breakdown, spending_habits, total_bnpl)
 
+        # Generate Spending Trend
+        spending_trend = self._calculate_spending_trend(enriched_transactions)
+
         return {
             "total_bnpl": f"{total_bnpl:.2f}",
             "category_breakdown": category_breakdown,
@@ -173,8 +176,37 @@ class SmartAnalyzer:
             "carbon_footprint": f"{carbon_footprint:.1f}",
             "investment_projection": investment_projection,
             "notifications": notifications,
-            "level_info": level_info
+            "level_info": level_info,
+            "spending_trend": spending_trend
         }
+
+    def _calculate_spending_trend(self, transactions):
+        """
+        Calculates daily spending totals for the last 30 days (or available range).
+        """
+        trend = {}
+        import datetime
+        for tx in transactions:
+            date = tx.get("date")
+            if not date:
+                continue
+
+            # Normalize to string
+            if isinstance(date, datetime.date):
+                date = date.isoformat()
+
+            try:
+                amt = float(tx.get("amount", 0))
+                if date in trend:
+                    trend[date] += amt
+                else:
+                    trend[date] = amt
+            except ValueError:
+                continue
+
+        # Sort by date
+        sorted_dates = sorted(trend.keys())
+        return {d: trend[d] for d in sorted_dates}
 
     def _calculate_level(self, xp):
         """
@@ -394,6 +426,20 @@ class SmartAnalyzer:
                     amount = analysis_data["category_breakdown"].get(cat, 0)
                     return f"You have spent ${amount:.2f} on {cat}."
             return f"Your total projected monthly spending is ${analysis_data.get('projected_spending')}."
+
+        if "cancel" in q and "subscription" in q:
+            # Check if a specific sub is mentioned
+            subs = analysis_data.get("subscriptions", [])
+            target_sub = None
+            for sub in subs:
+                if sub["name"].lower() in q:
+                    target_sub = sub
+                    break
+
+            if target_sub:
+                return f"I can help with that. Here is a draft email to cancel {target_sub['name']}: \n\n'Subject: Cancellation Request - Account associated with {target_sub['name']}\n\nTo Whom It May Concern,\n\nI am writing to request the immediate cancellation of my subscription. Please confirm when the cancellation has been processed and ensure no further charges are applied.\n\nThank you.'"
+            else:
+                return "Which subscription would you like to cancel? I found: " + ", ".join([s["name"] for s in subs])
 
         if "subscription" in q:
             subs = analysis_data.get("subscriptions", [])

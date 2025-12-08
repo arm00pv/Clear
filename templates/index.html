@@ -271,6 +271,14 @@
                                     <summary>⚙️ Data Management</summary>
                                     <div class="settings-content">
                                         <div class="setting-item">
+                                            <h4>Import Transactions (CSV)</h4>
+                                            <p>Upload a CSV with columns: Date, Description, Amount, Category.</p>
+                                            <form action="/import-csv" method="post" enctype="multipart/form-data">
+                                                <input type="file" name="csv_file" accept=".csv" required>
+                                                <button type="submit">Import CSV</button>
+                                            </form>
+                                        </div>
+                                        <div class="setting-item">
                                             <h4>Backup Data</h4>
                                             <p>Download a copy of your data.</p>
                                             <a href="/backup-data" class="btn-download">Download JSON</a>
@@ -346,10 +354,22 @@
                                 </div>
                             {% endif %}
 
-                            <h3>📊 Category Breakdown</h3>
-                            <div class="chart-container">
-                                <canvas id="categoryChart"></canvas>
+                            <h3>📊 Spending Analytics</h3>
+                            <div class="charts-row">
+                                <div class="chart-box">
+                                    <h4>Category Breakdown</h4>
+                                    <div class="chart-container">
+                                        <canvas id="categoryChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-box">
+                                    <h4>Spending Trend (Last 30 Days)</h4>
+                                    <div class="chart-container">
+                                        <canvas id="trendChart"></canvas>
+                                    </div>
+                                </div>
                             </div>
+
                             <!-- Hidden data for Chart.js -->
                             <script>
                                 const categoryData = {
@@ -358,9 +378,15 @@
                                     colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
                                 };
 
+                                const trendData = {
+                                    labels: [{% for date in analysis.spending_trend.keys() %}"{{ date }}",{% endfor %}],
+                                    data: [{% for amt in analysis.spending_trend.values() %}{{ amt }},{% endfor %}]
+                                };
+
                                 document.addEventListener('DOMContentLoaded', function() {
-                                    const ctx = document.getElementById('categoryChart').getContext('2d');
-                                    new Chart(ctx, {
+                                    // Doughnut Chart
+                                    const ctxCat = document.getElementById('categoryChart').getContext('2d');
+                                    new Chart(ctxCat, {
                                         type: 'doughnut',
                                         data: {
                                             labels: categoryData.labels,
@@ -376,6 +402,32 @@
                                             plugins: {
                                                 legend: {
                                                     position: 'right',
+                                                }
+                                            }
+                                        }
+                                    });
+
+                                    // Line Chart
+                                    const ctxTrend = document.getElementById('trendChart').getContext('2d');
+                                    new Chart(ctxTrend, {
+                                        type: 'line',
+                                        data: {
+                                            labels: trendData.labels,
+                                            datasets: [{
+                                                label: 'Daily Spending ($)',
+                                                data: trendData.data,
+                                                borderColor: '#36A2EB',
+                                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                                tension: 0.3,
+                                                fill: true
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true
                                                 }
                                             }
                                         }

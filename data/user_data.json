@@ -56,34 +56,34 @@
     ],
     "xp": 20,
     "challenges": {
-        "date": "2025-12-03",
+        "date": "2025-12-05",
         "active": [
             {
-                "title": "Coffee at Home",
-                "desc": "Skip the cafe and make coffee at home.",
-                "reward": 20,
+                "title": "Check Health Score",
+                "desc": "View your financial health score.",
+                "reward": 10,
                 "target": 1,
-                "uid": "ch_coffee",
+                "uid": "ch_health",
+                "current": 1,
+                "completed": false,
+                "can_claim": true
+            },
+            {
+                "title": "Review Subscriptions",
+                "desc": "Check your recurring bills for unused subs.",
+                "reward": 40,
+                "target": 1,
+                "uid": "ch_sub",
                 "current": 0,
                 "completed": false,
                 "can_claim": false
             },
             {
-                "title": "Under $10 Lunch",
-                "desc": "Spend less than $10 on lunch.",
-                "reward": 30,
+                "title": "Add a Savings Goal",
+                "desc": "Create a new savings goal in the app.",
+                "reward": 25,
                 "target": 1,
-                "uid": "ch_lunch",
-                "current": 0,
-                "completed": false,
-                "can_claim": false
-            },
-            {
-                "title": "Zero Spend Day",
-                "desc": "Don't spend any money today (bills excluded).",
-                "reward": 50,
-                "target": 1,
-                "uid": "ch_zero",
+                "uid": "ch_goal",
                 "current": 0,
                 "completed": false,
                 "can_claim": false

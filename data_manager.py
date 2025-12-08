@@ -96,6 +96,13 @@ class DataManager:
         data["transactions"] = transactions
         self._save_data(data)
 
+    def add_transactions_bulk(self, new_transactions):
+        data = self._load_data()
+        transactions = data.get("transactions", [])
+        transactions.extend(new_transactions)
+        data["transactions"] = transactions
+        self._save_data(data)
+
     def get_bills(self):
         data = self._load_data()
         return data.get("recurring_bills", [])
