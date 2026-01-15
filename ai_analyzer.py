@@ -47,13 +47,24 @@ class SmartAnalyzer:
         category_breakdown = {cat: 0.0 for cat in self.CATEGORIES}
         category_breakdown["Uncategorized"] = 0.0
         bnpl_providers = {}
+        tag_analysis = {}
 
         spending_habits = []
         enriched_transactions = []
 
+        import re
+
         for transaction in transactions:
             description = transaction.get("description", "").upper()
             amount = transaction.get("amount", 0.0)
+
+            # Extract tags (e.g., #VACATION, #COFFEE)
+            tags = re.findall(r'#\w+', description)
+            for tag in tags:
+                tag_name = tag.lstrip('#')
+                if tag_name not in tag_analysis:
+                    tag_analysis[tag_name] = 0.0
+                tag_analysis[tag_name] += amount
 
             categorized = False
             tx_category = "Uncategorized"
@@ -177,7 +188,8 @@ class SmartAnalyzer:
             "investment_projection": investment_projection,
             "notifications": notifications,
             "level_info": level_info,
-            "spending_trend": spending_trend
+            "spending_trend": spending_trend,
+            "tag_analysis": tag_analysis
         }
 
     def _calculate_spending_trend(self, transactions):
@@ -257,6 +269,13 @@ class SmartAnalyzer:
                 notifications.append({"type": "alert", "message": f"Budget Exceeded: You are over limit for {item['category']}!"})
             elif item["status"] == "warning":
                 notifications.append({"type": "warning", "message": f"Budget Warning: {item['category']} is near limit."})
+
+        # Rapid Spending Detection (Simple Heuristic: if today is < 10th and total budget used > 50%)
+        if today.day <= 10:
+            total_limit = sum(i.get("limit", 0) for i in budget_analysis)
+            total_spent = sum(i.get("amount", 0) for i in budget_analysis)
+            if total_limit > 0 and (total_spent / total_limit) > 0.5:
+                 notifications.append({"type": "warning", "message": "Rapid Spending Alert: You've used over 50% of your budget in the first 10 days!"})
 
         return notifications
 

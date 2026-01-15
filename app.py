@@ -172,14 +172,21 @@ def add_transaction():
     description = request.form.get('description')
     amount = request.form.get('amount')
     category = request.form.get('category')
+    tags = request.form.get('tags')
 
     if date and description and amount and category:
         try:
             amount = float(amount)
+
+            # Append tags to description if present
+            full_description = description
+            if tags:
+                full_description = f"{description} {tags}"
+
             # Add transaction
             data_manager.add_transaction({
                 "date": date,
-                "description": description,
+                "description": full_description,
                 "amount": amount,
                 "category": category # Optional: If we want to override auto-cat
             })
